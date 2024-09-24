@@ -3,3 +3,5 @@ output
 __pycache__
 tools
 data
+commits_hash.json
+sling-org-apache-sling-query
