@@ -21,7 +21,7 @@ class ITSMiner:
     __issue_data: dict = {}
 
     @classmethod
-    def mine_issue_data(repo: str) -> dict:
+    def mine_issue_data(cls, repo: str) -> dict:
         """
         Mines all the issue data for a github repository
 
@@ -36,4 +36,11 @@ class ITSMiner:
         Returns a dictionary with all issue data
         """
 
-        pass
+        auth = Auth.Token("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")
+        github = Github(auth=auth)
+        repo = github.get_repo(repo)
+        issues = repo.get_issues()
+        
+        return issues
+
+
