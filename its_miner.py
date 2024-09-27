@@ -1,6 +1,7 @@
 """Mines the issue data for a github repo"""
 
 from github import Auth, Github
+from github.Issue import Issue
 
 
 class ITSMiner:
@@ -15,7 +16,7 @@ class ITSMiner:
     Methods:
     --------
 
-    get_issue_data(): Class method to get all the issue data for a repo
+    mine_issue_data(): Class method to get all the issue data for a repo
     """
 
     __issue_data: dict = {}
@@ -40,7 +41,100 @@ class ITSMiner:
         github = Github(auth=auth)
         repo = github.get_repo(repo)
         issues = repo.get_issues()
-        
-        return issues
 
+        # for each issue get required data
+        for issue in issues:
+            pass
 
+        return cls.__issue_datas
+
+    @classmethod
+    def __get_issue_number(cls, issue: Issue):
+        """
+        Get the number of the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_title(cls, issue: Issue):
+        """
+        Get the title of the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_body(cls, issue: Issue):
+        """
+        Extract the issue body
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_status(cls, issue: Issue):
+        """
+        Extract the status of the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_date_created(cls, issue: Issue):
+        """
+        Extract the date at which the issue was created
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_comments(cls, issue: Issue):
+        """
+        Extract the comments of the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_issue_date_closed(cls, issue: Issue):
+        """
+        Extract the date at which the issue was closed
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
