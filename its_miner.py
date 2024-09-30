@@ -19,7 +19,8 @@ class ITSMiner:
     mine_issue_data(): Class method to get all the issue data for a repo
     """
 
-    __issue_data: dict = {}
+    # TODO: clear the variable of issue data once its called.
+    __issue_data: dict = {"issues": []}
 
     @classmethod
     def mine_issue_data(cls, repo: str) -> dict:
@@ -42,14 +43,28 @@ class ITSMiner:
         repo = github.get_repo(repo)
         issues = repo.get_issues()
 
+        # TODO: need to improve this
+        # clear previous issues
+        cls.__issue_data["issues"] = []
+
         # for each issue get required data
         for issue in issues:
-            pass
+            issue_number = cls.__get_issue_number(issue)
+            issue_title = cls.__get_issue_title(issue)
+            issue_body = cls.__get_issue_body(issue)
 
-        return cls.__issue_datas
+            issue_data = {
+                "number": issue_number,
+                "title": issue_title,
+                "body": issue_body
+            }
+
+            cls.__issue_data.get("issues").append(issue_data)
+
+        return cls.__issue_data
 
     @classmethod
-    def __get_issue_number(cls, issue: Issue):
+    def __get_issue_number(cls, issue: Issue) -> int:
         """
         Get the number of the issue
 
@@ -57,12 +72,19 @@ class ITSMiner:
         --------
 
         issue (Issue): Issue instance of the repo
+
+        Returns:
+        -------
+
+        An int representing the issue number
         """
 
-        pass
+        issue_number = issue.number
+        return issue_number
+        
 
     @classmethod
-    def __get_issue_title(cls, issue: Issue):
+    def __get_issue_title(cls, issue: Issue) -> str:
         """
         Get the title of the issue
 
@@ -70,12 +92,18 @@ class ITSMiner:
         --------
 
         issue (Issue): Issue instance of the repo
+
+        Returns:
+        -------
+
+        A string representing the issue title
         """
 
-        pass
+        issue_title = issue.title
+        return issue_title
 
     @classmethod
-    def __get_issue_body(cls, issue: Issue):
+    def __get_issue_body(cls, issue: Issue) -> str:
         """
         Extract the issue body
 
@@ -83,9 +111,15 @@ class ITSMiner:
         --------
 
         issue (Issue): Issue instance of the repo
+
+        Returns:
+        -------
+
+        A string representing the issue body
         """
 
-        pass
+        issue_body = issue.body
+        return issue_body
 
     @classmethod
     def __get_issue_status(cls, issue: Issue):
