@@ -52,11 +52,13 @@ class ITSMiner:
             issue_number = cls.__get_issue_number(issue)
             issue_title = cls.__get_issue_title(issue)
             issue_body = cls.__get_issue_body(issue)
+            issue_status = cls.__get_issue_status(issue)
 
             issue_data = {
                 "number": issue_number,
                 "title": issue_title,
-                "body": issue_body
+                "body": issue_body,
+                "status": issue_status
             }
 
             cls.__issue_data.get("issues").append(issue_data)
@@ -132,7 +134,8 @@ class ITSMiner:
         issue (Issue): Issue instance of the repo
         """
 
-        pass
+        status = issue.state
+        return status
 
     @classmethod
     def __get_issue_date_created(cls, issue: Issue):
