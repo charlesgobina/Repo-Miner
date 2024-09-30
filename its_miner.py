@@ -2,6 +2,7 @@
 
 from github import Auth, Github
 from github.Issue import Issue
+from datetime import datetime
 
 
 class ITSMiner:
@@ -53,12 +54,14 @@ class ITSMiner:
             issue_title = cls.__get_issue_title(issue)
             issue_body = cls.__get_issue_body(issue)
             issue_status = cls.__get_issue_status(issue)
+            issue_date_created = cls.__get_issue_date_created(issue)
 
             issue_data = {
                 "number": issue_number,
                 "title": issue_title,
                 "body": issue_body,
-                "status": issue_status
+                "status": issue_status,
+                "date_created": issue_date_created
             }
 
             cls.__issue_data.get("issues").append(issue_data)
@@ -124,7 +127,7 @@ class ITSMiner:
         return issue_body
 
     @classmethod
-    def __get_issue_status(cls, issue: Issue):
+    def __get_issue_status(cls, issue: Issue) -> str:
         """
         Extract the status of the issue
 
@@ -138,9 +141,11 @@ class ITSMiner:
         return status
 
     @classmethod
-    def __get_issue_date_created(cls, issue: Issue):
+    def __get_issue_date_created(cls, issue: Issue) -> str:
         """
-        Extract the date at which the issue was created
+        Extract the date at which the issue was created.
+
+        Formats the date to a string.
 
         Parameters:
         --------
@@ -148,7 +153,9 @@ class ITSMiner:
         issue (Issue): Issue instance of the repo
         """
 
-        pass
+        date_created = issue.created_at
+        formatted_date = datetime.strftime(date_created, "%d.%m.%y-%H.%M.%S")
+        return formatted_date
 
     @classmethod
     def __get_issue_comments(cls, issue: Issue):
