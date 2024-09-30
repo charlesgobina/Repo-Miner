@@ -1,8 +1,9 @@
 """Mines the issue data for a github repo"""
 
+from datetime import datetime
+
 from github import Auth, Github
 from github.Issue import Issue
-from datetime import datetime
 
 
 class ITSMiner:
@@ -86,7 +87,6 @@ class ITSMiner:
 
         issue_number = issue.number
         return issue_number
-        
 
     @classmethod
     def __get_issue_title(cls, issue: Issue) -> str:
