@@ -182,3 +182,31 @@ class ITSMiner:
         """
 
         pass
+
+    @classmethod
+    def __get_issue_labels(cls, issue: Issue):
+        """
+        Extract the labels asociated with the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
+
+    @classmethod
+    def __get_user(cls, issue: Issue):
+        """
+        Extract the user details
+
+        Extract the details of the user that created the issue
+
+        Parameters:
+        --------
+
+        issue (Issue): Issue instance of the repo
+        """
+
+        pass
