@@ -197,16 +197,30 @@ class ITSMiner:
         pass
 
     @classmethod
-    def __get_user(cls, issue: Issue):
+    def __get_user(cls, issue: Issue) -> dict:
         """
         Extract the user details
 
         Extract the details of the user that created the issue
 
-        Parameters:
-        --------
+        ## Parameters:
 
         issue (Issue): Issue instance of the repo
+
+        ## Returns
+
+        Dictionary with user data
         """
 
-        pass
+        user_data = {}
+        user_data.update({
+            "username": issue.user.login,
+            "id": issue.user.id,
+            "url": issue.user.url,
+            "repos_url": issue.user.repos_url,
+            "type": issue.user.type
+        })
+
+        return user_data
+
+        
