@@ -197,7 +197,7 @@ class ITSMiner:
         pass
 
     @classmethod
-    def __get_user(cls, issue: Issue) -> dict:
+    def __get_issue_user(cls, issue: Issue) -> dict:
         """
         Extract the user details
 
