@@ -56,14 +56,20 @@ class ITSMiner:
             issue_body = cls.__get_issue_body(issue)
             issue_status = cls.__get_issue_status(issue)
             issue_date_created = cls.__get_issue_date_created(issue)
+            issue_user_data = cls.__get_issue_user_data(issue)
 
             issue_data = {
                 "number": issue_number,
                 "title": issue_title,
                 "body": issue_body,
                 "status": issue_status,
-                "date_created": issue_date_created
+                "date_created": issue_date_created,
+                "user": issue_user_data
             }
+
+            # TODO: this provides all the data
+            # but seems to take alot of time in processing
+            # issue_data = issue.raw_data
 
             cls.__issue_data.get("issues").append(issue_data)
 
@@ -197,7 +203,7 @@ class ITSMiner:
         pass
 
     @classmethod
-    def __get_issue_user(cls, issue: Issue) -> dict:
+    def __get_issue_user_data(cls, issue: Issue) -> dict:
         """
         Extract the user details
 
