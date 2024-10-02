@@ -4,6 +4,7 @@ import json
 from pprint import pprint
 import git
 
+
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
 
@@ -52,17 +53,18 @@ class DevEffort:
                 try:
                     commit = project_repo.commit(commit_hash)
                     commit_details = {
-                            "project": project['project'],
-                            "commit_hash": commit_hash,
-                            "author": commit.author.name,
-                            "date": commit.committed_datetime,
-                            "lines_changed": commit.stats.total['lines'],
-                            "files_changed": len(commit.stats.files)
-                        }
+                        "project": project['project'],
+                        "commit_hash": commit_hash,
+                        "author": commit.author.name,
+                        # "date": commit.committed_datetime,
+                        "lines_changed": commit.stats.total['lines'],
+                        "files_changed": len(commit.stats.files)
+                    }
                     commit_details_list.append(commit_details)
-                    
+
                 except ValueError as value_error:
-                    print(f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
+                    print(
+                        f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
                     print(f"Value Error: {value_error}")
                     return None
                 commit_details_matrix.append(commit_details_list)
@@ -70,6 +72,17 @@ class DevEffort:
 
     def print_commit_data(self):
         """Prints commit data"""
-        printable_list = self.collect_commit_details()
-        pprint(printable_list)
-        print(len(printable_list))
+        commit_details_list = self.collect_commit_details()
+        # pprint(commit_details_list)
+        print(len(commit_details_list))
+
+        with open('commit_details.json', 'w', encoding='utf-8') as cd_file:
+            json.dump(commit_details_list, cd_file)
+
+        return cd_file
+
+    def organize_by_refactoring(self):
+        """Organizes the output by refactoring"""
+
+    def organize_by_developer(self):
+        """Organizes the output by developer"""
