@@ -43,7 +43,7 @@ class ITSMiner:
         auth = Auth.Token("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")
         github = Github(auth=auth)
         repo = github.get_repo(repo)
-        issues = repo.get_issues()
+        issues = repo.get_issues(state="all")
 
         # TODO: need to improve this
         # clear previous issues
@@ -57,6 +57,8 @@ class ITSMiner:
             issue_status = cls.__get_issue_status(issue)
             issue_date_created = cls.__get_issue_date_created(issue)
             issue_user_data = cls.__get_issue_user_data(issue)
+            issue_label_data = cls.__get_issue_labels(issue)
+            issue_comment_data = cls.__get_issue_comments(issue)
 
             issue_data = {
                 "number": issue_number,
@@ -64,11 +66,14 @@ class ITSMiner:
                 "body": issue_body,
                 "status": issue_status,
                 "date_created": issue_date_created,
-                "user": issue_user_data
+                "user": issue_user_data,
+                "labels": issue_label_data,
+                "comments": issue_comment_data
             }
 
             # TODO: this provides all the data
-            # but seems to take alot of time in processing
+            # but seems to take alot of time in processing. for now write
+            # sepearte methods to extract the data
             # issue_data = issue.raw_data
 
             cls.__issue_data.get("issues").append(issue_data)
@@ -164,20 +169,35 @@ class ITSMiner:
         return formatted_date
 
     @classmethod
-    def __get_issue_comments(cls, issue: Issue):
+    def __get_issue_comments(cls, issue: Issue) -> list:
         """
         Extract the comments of the issue
 
-        Parameters:
-        --------
+        ## Parameters:
 
         issue (Issue): Issue instance of the repo
+
+        ## Returns:
+
         """
 
-        pass
+        comments = []
+
+        for comment in issue.get_comments():
+            comments.append({
+                "body": comment.body,
+                "user": {
+                    "name": comment.user.name,
+                    "url": comment.user.url
+                },
+                "created_at": comment.created_at 
+            })
+        
+        return comments
+        
 
     @classmethod
-    def __get_issue_date_closed(cls, issue: Issue):
+    def __get_issue_date_closed(cls, issue: Issue) -> str | None:
         """
         Extract the date at which the issue was closed
 
@@ -190,17 +210,29 @@ class ITSMiner:
         pass
 
     @classmethod
-    def __get_issue_labels(cls, issue: Issue):
+    def __get_issue_labels(cls, issue: Issue) -> list:
         """
         Extract the labels asociated with the issue
 
-        Parameters:
-        --------
+        ## Parameters:
 
         issue (Issue): Issue instance of the repo
+
+        ## Returns:
+
+        A list containing labels information.
         """
 
-        pass
+        labels = []
+        
+        for label in issue.labels:
+            labels.append({
+                "name": label.name,
+                "color": label.color,
+                "description": label.description
+            })
+
+        return labels
 
     @classmethod
     def __get_issue_user_data(cls, issue: Issue) -> dict:
