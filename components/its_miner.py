@@ -11,13 +11,11 @@ class ITSMiner:
     """
     Represents the issue data miner for github
 
-    Attributes:
-    ----------
+    ## Attributes:
 
     __issue_data (dict): Class variable that stores all the issue data for a repo
 
-    Methods:
-    --------
+    ## Methods:
 
     mine_issue_data(): Class method to get all the issue data for a repo
     """
@@ -30,13 +28,11 @@ class ITSMiner:
         """
         Mines all the issue data for a github repository
 
-        Parameter:
-        --------
+        ## Parameter:
 
         repo (str): Name of the repository. Has to be of the format `Owner/Repository`
 
-        Returns:
-        -------
+        ## Returns:
 
         Returns a dictionary with all issue data
         """
@@ -99,14 +95,12 @@ class ITSMiner:
         """
         Get the number of the issue
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
 
-        Returns:
-        -------
-
+        ## Returns:
+        
         An int representing the issue number
         """
 
@@ -118,14 +112,12 @@ class ITSMiner:
         """
         Get the title of the issue
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
 
-        Returns:
-        -------
-
+        ## Returns:
+        
         A string representing the issue title
         """
 
@@ -137,14 +129,12 @@ class ITSMiner:
         """
         Extract the issue body
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
 
-        Returns:
-        -------
-
+        ## Returns:
+        
         A string representing the issue body
         """
 
@@ -156,10 +146,13 @@ class ITSMiner:
         """
         Extract the status of the issue
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
+
+        ## Returns:
+
+        The issue status as a string
         """
 
         status = issue.state
@@ -172,10 +165,12 @@ class ITSMiner:
 
         Formats the date to a string.
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
+
+        ## Returns
+        The issue created date as string
         """
 
         date_created = issue.created_at
@@ -194,7 +189,6 @@ class ITSMiner:
         ## Returns:
 
         List of issue comments
-
         """
 
         comments = []
@@ -216,10 +210,13 @@ class ITSMiner:
         """
         Extract the date at which the issue was closed
 
-        Parameters:
-        --------
-
+        ## Parameters:
+        
         issue (Issue): Issue instance of the repo
+
+        ## Returns
+        
+        The date the issue was closed at if it exists
         """
 
         date_closed = issue.closed_at
