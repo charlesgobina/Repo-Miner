@@ -5,7 +5,6 @@ from datetime import datetime
 from github import Auth, Github
 from github.Issue import Issue
 
-
 # TODO: implement module level logger
 
 class ITSMiner:
