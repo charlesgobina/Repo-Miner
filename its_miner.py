@@ -6,6 +6,8 @@ from github import Auth, Github
 from github.Issue import Issue
 
 
+# TODO: implement module level logger
+
 class ITSMiner:
     """
     Represents the issue data miner for github
@@ -49,8 +51,15 @@ class ITSMiner:
         # clear previous issues
         cls.__issue_data["issues"] = []
 
+        # for debugging
+        # intitial_rete_limit = github.get_rate_limit().core.used
+
         # for each issue get required data
         for issue in issues:
+
+            # for debugging
+            # rate_limit = github.get_rate_limit().core.used
+
             issue_number = cls.__get_issue_number(issue)
             issue_title = cls.__get_issue_title(issue)
             issue_body = cls.__get_issue_body(issue)
@@ -58,7 +67,12 @@ class ITSMiner:
             issue_date_created = cls.__get_issue_date_created(issue)
             issue_user_data = cls.__get_issue_user_data(issue)
             issue_label_data = cls.__get_issue_labels(issue)
-            issue_comment_data = cls.__get_issue_comments(issue)
+            issue_date_closed = cls.__get_issue_date_closed(issue)
+
+            # TODO: need to find a solution for this
+            # a sperate network request is sent to get the comments
+            # which takes a lot of time
+            # issue_comment_data = cls.__get_issue_comments(issue)
 
             issue_data = {
                 "number": issue_number,
@@ -68,7 +82,8 @@ class ITSMiner:
                 "date_created": issue_date_created,
                 "user": issue_user_data,
                 "labels": issue_label_data,
-                "comments": issue_comment_data
+                # "comments": issue_comment_data,
+                "date_closed": issue_date_closed
             }
 
             # TODO: this provides all the data
@@ -165,8 +180,8 @@ class ITSMiner:
         """
 
         date_created = issue.created_at
-        formatted_date = datetime.strftime(date_created, "%d.%m.%y-%H.%M.%S")
-        return formatted_date
+        date_created = datetime.strftime(date_created, "%d.%m.%y-%H.%M.%S")
+        return date_created
 
     @classmethod
     def __get_issue_comments(cls, issue: Issue) -> list:
@@ -179,6 +194,8 @@ class ITSMiner:
 
         ## Returns:
 
+        List of issue comments
+
         """
 
         comments = []
@@ -186,15 +203,14 @@ class ITSMiner:
         for comment in issue.get_comments():
             comments.append({
                 "body": comment.body,
-                "user": {
-                    "name": comment.user.name,
-                    "url": comment.user.url
-                },
-                "created_at": comment.created_at 
+                # "user": {
+                #     "name": comment.user.name,
+                #     "url": comment.user.url
+                # },
+                "created_at": comment.created_at
             })
-        
+
         return comments
-        
 
     @classmethod
     def __get_issue_date_closed(cls, issue: Issue) -> str | None:
@@ -207,7 +223,12 @@ class ITSMiner:
         issue (Issue): Issue instance of the repo
         """
 
-        pass
+        date_closed = issue.closed_at
+
+        if date_closed:
+            date_closed = datetime.strftime(date_closed, "%d.%m.%y-%H.%M.%S")
+
+        return date_closed
 
     @classmethod
     def __get_issue_labels(cls, issue: Issue) -> list:
@@ -224,7 +245,7 @@ class ITSMiner:
         """
 
         labels = []
-        
+
         for label in issue.labels:
             labels.append({
                 "name": label.name,
@@ -260,5 +281,3 @@ class ITSMiner:
         })
 
         return user_data
-
-        
