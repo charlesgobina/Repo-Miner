@@ -1,9 +1,10 @@
 """Developers effort component: collects total TLOC for each refactoring and developer"""
 
 import json
-import csv
 from pprint import pprint
 import datetime
+import subprocess
+import os
 import git
 
 class DevEffort:
@@ -41,9 +42,7 @@ class DevEffort:
                     # "project": project['project'],
                     "commit_hash": commit_hash,
                     "author": commit.author.name,
-                    "date": commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-                    "lines_changed": commit.stats.total['lines'],
-                    "files_changed": len(commit.stats.files)
+                    "date": commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S")
                 }
                 commit_details_list.append(commit_details)
 
@@ -54,6 +53,22 @@ class DevEffort:
                 return None
         commit_details_list.reverse()
         return commit_details_list
+
+    def touched_lines_of_code(self, current_directory, project_dir, commit_details_list):
+        """Gets the touched lines of code for each commit of a project"""
+        first_commit = 1
+        counter = 0
+        tloc_list = []
+        for commit in commit_details_list:
+            commit_hash = commit['commit_hash']
+            # print(f"Commit Hash: {commit_hash}")
+
+            os.chdir(project_dir)
+            checkout_command = subprocess.run(["git", "checkout", f"{commit_hash}"], check=False)
+            # print(checkout_command)
+            scc_command = subprocess.run(["scc", "-f", "json", "-o", "scc.json"], check=False)
+
+        os.chdir(current_directory)
 
     def mine_projects(self):
         """Prints commit data"""
@@ -68,13 +83,13 @@ class DevEffort:
                 "project": project[1]["project"],
                 "commits": project[1]["commits"]
             })
-        # projects.reverse()
 
         for project in projects:
             # print(project["project"])
             project_name = project["project"]
             project_dir = self.get_project_dir(project_name)
             project_repo = git.Repo(project_dir)
+
             commit_details_list = self.collect_commit_details(project, project_repo)
 
             pretty_print = 0
@@ -85,13 +100,5 @@ class DevEffort:
             with open(f"commit_details/{project_name}.json", 'w', encoding='utf-8') as cd_file:
                 json.dump(commit_details_list, cd_file)
 
-    def organize_by_refactoring(self):
-        """Organizes the output by refactoring"""
-        with open("dev_effort.csv", "w", newline="", encoding='utf-8') as csv_file:
-            for commit in self.commit_details_matrix:
-                dict_writer = csv.DictWriter(csv_file, commit.keys())
-                dict_writer.writeheader()
-                dict_writer.writerow(commit)
-
-    def organize_by_developer(self):
-        """Organizes the output by developer"""
+            current_directory = os.getcwd()
+            self.touched_lines_of_code(current_directory, project_dir, commit_details_list)
