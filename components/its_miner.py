@@ -21,10 +21,10 @@ class ITSMiner:
     """
 
     # TODO: clear the variable of issue data once its called.
-    __issue_data: dict = {"issues": []}
+    __issue_data: list = []
 
     @classmethod
-    def mine_issue_data(cls, repo: str) -> dict:
+    def mine_issue_data(cls, repo: str) -> list:
         """
         Mines all the issue data for a github repository
 
@@ -44,16 +44,10 @@ class ITSMiner:
 
         # TODO: need to improve this
         # clear previous issues
-        cls.__issue_data["issues"] = []
-
-        # for debugging
-        # intitial_rete_limit = github.get_rate_limit().core.used
+        cls.__issue_data.clear()
 
         # for each issue get required data
         for issue in issues:
-
-            # for debugging
-            # rate_limit = github.get_rate_limit().core.used
 
             issue_number = cls.__get_issue_number(issue)
             issue_title = cls.__get_issue_title(issue)
@@ -86,7 +80,7 @@ class ITSMiner:
             # sepearte methods to extract the data
             # issue_data = issue.raw_data
 
-            cls.__issue_data.get("issues").append(issue_data)
+            cls.__issue_data.append(issue_data)
 
         return cls.__issue_data
 
