@@ -196,11 +196,11 @@ class ITSMiner:
         for comment in issue.get_comments():
             comments.append({
                 "body": comment.body,
-                # "user": {
-                #     "name": comment.user.name,
-                #     "url": comment.user.url
-                # },
-                "created_at": comment.created_at
+                "user": {
+                    "name": comment.user.login,
+                    "url": comment.user.url
+                },
+                "created_at": datetime.strftime(comment.created_at, "%d.%m.%y-%H.%M.%S")
             })
 
         return comments
