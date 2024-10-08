@@ -1,10 +1,10 @@
 """Developers effort component: collects total TLOC for each refactoring and developer"""
 
-import json
-from pprint import pprint
-import datetime
-import subprocess
 import os
+import json
+from operator import itemgetter
+from pprint import pprint
+import subprocess
 import git
 
 class DevEffort:
@@ -39,7 +39,6 @@ class DevEffort:
             try:
                 commit = project_repo.commit(commit_hash)
                 commit_details = {
-                    # "project": project['project'],
                     "commit_hash": commit_hash,
                     "author": commit.author.name,
                     "date": commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S")
@@ -51,22 +50,42 @@ class DevEffort:
                     f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
                 print(f"Value Error: {value_error}")
                 return None
-        commit_details_list.reverse()
         return commit_details_list
+
+    def get_loc(self, directory, commit):
+        """Switches current repository to specified commit"""
+        os.chdir(directory)
+        subprocess.run(["git", "checkout", f"{commit}"], check=False)
+        scc_file = f"scc_{commit}.json"
+        subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
+
+        loc_counter = 0
+        with open(scc_file, 'r', encoding='utf-8') as scc_file:
+            scc_data = json.load(scc_file)
+            for language in scc_data:
+                loc = language['Code']
+                loc_counter += loc
+        # print(loc_counter)
+        return loc
 
     def touched_lines_of_code(self, current_directory, project_dir, commit_details_list):
         """Gets the touched lines of code for each commit of a project"""
-        first_commit = 1
-        counter = 0
-        tloc_list = []
-        for commit in commit_details_list:
-            commit_hash = commit['commit_hash']
-            # print(f"Commit Hash: {commit_hash}")
 
-            os.chdir(project_dir)
-            checkout_command = subprocess.run(["git", "checkout", f"{commit_hash}"], check=False)
-            # print(checkout_command)
-            scc_command = subprocess.run(["scc", "-f", "json", "-o", "scc.json"], check=False)
+        tloc_list = []
+
+        for commit in commit_details_list:
+            commit_hash = commit['commit_hash']          
+            current_loc = self.get_loc(project_dir, commit_hash)
+
+            rev_parse_command = subprocess.check_output(["git", "rev-parse", f"{commit_hash}^1"])
+            previous_commit = rev_parse_command.decode('utf-8').strip()
+            previous_loc = self.get_loc(project_dir, previous_commit)
+
+            tloc = abs(current_loc - previous_loc)
+            tloc_list.append(tloc)
+
+        for tloc in tloc_list:
+            print(tloc)
 
         os.chdir(current_directory)
 
@@ -91,14 +110,15 @@ class DevEffort:
             project_repo = git.Repo(project_dir)
 
             commit_details_list = self.collect_commit_details(project, project_repo)
-
-            pretty_print = 0
-            if pretty_print:
-                pprint(commit_details_list)
-            # print(len(commit_details_list))
+            sorted_commit_details = sorted(commit_details_list, key=itemgetter('date'))
 
             with open(f"commit_details/{project_name}.json", 'w', encoding='utf-8') as cd_file:
-                json.dump(commit_details_list, cd_file)
+                json.dump(sorted_commit_details, cd_file)
+
+            pretty_print = 1
+            if pretty_print:
+                pprint(sorted_commit_details)
+            # print(len(sorted_commit_details))
 
             current_directory = os.getcwd()
-            self.touched_lines_of_code(current_directory, project_dir, commit_details_list)
+            self.touched_lines_of_code(current_directory, project_dir, sorted_commit_details)
