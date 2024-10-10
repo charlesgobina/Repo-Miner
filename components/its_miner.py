@@ -7,6 +7,7 @@ from github.Issue import Issue
 
 # TODO: implement module level logger
 
+
 class ITSMiner:
     """
     Represents the issue data miner for github
@@ -34,7 +35,7 @@ class ITSMiner:
 
         ## Returns:
 
-        Returns a dictionary with all issue data
+        Returns a list with all issue data
         """
 
         auth = Auth.Token("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")
@@ -49,40 +50,56 @@ class ITSMiner:
         # for each issue get required data
         for issue in issues:
 
-            issue_number = cls.__get_issue_number(issue)
-            issue_title = cls.__get_issue_title(issue)
-            issue_body = cls.__get_issue_body(issue)
-            issue_status = cls.__get_issue_status(issue)
-            issue_date_created = cls.__get_issue_date_created(issue)
-            issue_user_data = cls.__get_issue_user_data(issue)
-            issue_label_data = cls.__get_issue_labels(issue)
-            issue_date_closed = cls.__get_issue_date_closed(issue)
-
-            # TODO: need to find a solution for this
-            # a sperate network request is sent to get the comments
-            # which takes a lot of time
-            # issue_comment_data = cls.__get_issue_comments(issue)
-
-            issue_data = {
-                "number": issue_number,
-                "title": issue_title,
-                "body": issue_body,
-                "status": issue_status,
-                "date_created": issue_date_created,
-                "user": issue_user_data,
-                "labels": issue_label_data,
-                # "comments": issue_comment_data,
-                "date_closed": issue_date_closed
-            }
-
-            # TODO: this provides all the data
-            # but seems to take alot of time in processing. for now write
-            # sepearte methods to extract the data
-            # issue_data = issue.raw_data
+            issue_data = issue.raw_data
+            issue_data["comments_count"] = issue_data["comments"]
+            issue_data["comments"] = cls.__get_issue_comments(issue)
+            issue_data["timeline"] = cls.__get_issue_timeline(issue)
 
             cls.__issue_data.append(issue_data)
 
         return cls.__issue_data
+
+    @classmethod
+    def __get_issue_events(cls, issue: Issue) -> list:
+        """
+        Get the events related to the issue
+
+        ## Parameters
+
+        issue (Issue): Issue instance of the repo
+
+        ## Returns
+
+        A list containing the issue events
+        """
+
+        events = []
+
+        for event in issue.get_events():
+            events.append(event.raw_data)
+
+        return events
+
+    @classmethod
+    def __get_issue_timeline(cls, issue: Issue) -> list:
+        """
+        Get the events related to the issue
+
+        ## Parameters
+
+        issue (Issue): Issue instance of the repo
+
+        ## Returns
+
+        A list containing the issue timeline
+        """
+
+        timeline = []
+
+        for event in issue.get_timeline():
+            timeline.append(event.raw_data)
+
+        return timeline
 
     @classmethod
     def __get_issue_number(cls, issue: Issue) -> int:
@@ -90,11 +107,11 @@ class ITSMiner:
         Get the number of the issue
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns:
-        
+
         An int representing the issue number
         """
 
@@ -107,11 +124,11 @@ class ITSMiner:
         Get the title of the issue
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns:
-        
+
         A string representing the issue title
         """
 
@@ -124,11 +141,11 @@ class ITSMiner:
         Extract the issue body
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns:
-        
+
         A string representing the issue body
         """
 
@@ -141,7 +158,7 @@ class ITSMiner:
         Extract the status of the issue
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns:
@@ -160,7 +177,7 @@ class ITSMiner:
         Formats the date to a string.
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns
@@ -188,15 +205,7 @@ class ITSMiner:
         comments = []
 
         for comment in issue.get_comments():
-            comments.append({
-                "body": comment.body,
-                "user": {
-                    "name": comment.user.login,
-                    "url": comment.user.url
-                },
-                "created_at": datetime.strftime(comment.created_at, "%d.%m.%y-%H.%M.%S")
-            })
-
+            comments.append(comment.raw_data)
         return comments
 
     @classmethod
@@ -205,11 +214,11 @@ class ITSMiner:
         Extract the date at which the issue was closed
 
         ## Parameters:
-        
+
         issue (Issue): Issue instance of the repo
 
         ## Returns
-        
+
         The date the issue was closed at if it exists
         """
 
