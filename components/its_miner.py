@@ -2,16 +2,20 @@
 
 import logging
 from datetime import datetime
+from threading import Thread
 
 from github import Auth, Github
 from github.Issue import Issue
+
+# TODO: logging config and api keys should be loaded from config file
+# or a config object
 
 # Setting up module level logger
 logger = logging.getLogger(__name__)
 console_handler = logging.StreamHandler()
 logger.addHandler(console_handler)
 formatter = logging.Formatter(
-    fmt="{asctime} - {levelname} - {message}",
+    fmt="{asctime} - {name} - {levelname} - {message}",
     style="{",
     datefmt="%Y-%m-%d %H:%M",
 )
@@ -32,7 +36,6 @@ class ITSMiner:
     mine_issue_data(): Class method to get all the issue data for a repo
     """
 
-    # TODO: clear the variable of issue data once its called.
     __issue_data: list = []
 
     @classmethod
@@ -49,10 +52,12 @@ class ITSMiner:
         Returns a list with all issue data
         """
 
-        auth = Auth.Token("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")
+        auth = Auth.Token("API_KEY")
         github = Github(auth=auth)
         gh_repo = github.get_repo(repo)
         issues = gh_repo.get_issues(state="all")
+
+        logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
 
         # TODO: need to improve this
         # clear previous issues
@@ -64,17 +69,54 @@ class ITSMiner:
             logger.debug(f"API rate limit used: {github.get_rate_limit().raw_data["core"]["used"]}")
             logger.debug(f"Fetching data for issue: {issue.number}; Project: {gh_repo.full_name}")
 
-            issue_data = issue.raw_data
-            issue_data["comments_count"] = issue_data["comments"]
-            issue_data["comments"] = cls.__get_issue_comments(issue)
-            issue_data["timeline"] = cls.__get_issue_timeline(issue)
+            issue_data = {}
+
+            # create threads for seperate newtork request
+            # to reduce computation time
+            issue_data_thread = Thread(
+                target=cls.__get_issue_raw_data,
+                args=(issue, issue_data,)
+                )
+            comments_data_thread = Thread(
+                target=cls.__get_issue_comments,
+                args=(issue, issue_data,)
+                )
+            timeline_data_thread = Thread(
+                target=cls.__get_issue_timeline,
+                args=(issue, issue_data,)
+                )
+
+            # start the threads
+            issue_data_thread.start()
+            comments_data_thread.start()
+            timeline_data_thread.start()
+
+            # join the threads to retrieve
+            # all data for an issue
+            issue_data_thread.join()
+            comments_data_thread.join()
+            timeline_data_thread.join()
 
             cls.__issue_data.append(issue_data)
 
         return cls.__issue_data
-    
+
     @classmethod
-    def __get_issue_comments(cls, issue: Issue) -> list:
+    def __get_issue_raw_data(cls, issue: Issue, issue_data: dict):
+        """
+        Get the raw data for issue
+
+        ## Paramters
+
+        issue (Issue): issue instance of the repo
+
+        issue_data (dict): data dictionary in which to insert data
+        """
+
+        issue_data.update(issue.raw_data)
+
+    @classmethod
+    def __get_issue_comments(cls, issue: Issue, issue_data: dict):
         """
         Extract the comments of the issue
 
@@ -82,20 +124,17 @@ class ITSMiner:
 
         issue (Issue): Issue instance of the repo
 
-        ## Returns:
-
-        List of issue comments
+        issue_data (dict): data dictionary in which to insert data
         """
 
         comments = []
 
         for comment in issue.get_comments():
             comments.append(comment.raw_data)
-        return comments
+        issue_data["comments"] = comments
 
-    
     @classmethod
-    def __get_issue_timeline(cls, issue: Issue) -> list:
+    def __get_issue_timeline(cls, issue: Issue, issue_data: dict):
         """
         Get the events related to the issue
 
@@ -103,9 +142,7 @@ class ITSMiner:
 
         issue (Issue): Issue instance of the repo
 
-        ## Returns
-
-        A list containing the issue timeline
+        issue_data (dict): data dictionary in which to insert data
         """
 
         timeline = []
@@ -113,7 +150,7 @@ class ITSMiner:
         for event in issue.get_timeline():
             timeline.append(event.raw_data)
 
-        return timeline
+        issue_data["timeline"] = timeline
 
     @classmethod
     def __get_issue_events(cls, issue: Issue) -> list:
@@ -135,7 +172,6 @@ class ITSMiner:
             events.append(event.raw_data)
 
         return events
-
 
     @classmethod
     def __get_issue_number(cls, issue: Issue) -> int:
@@ -224,7 +260,6 @@ class ITSMiner:
         date_created = datetime.strftime(date_created, "%d.%m.%y-%H.%M.%S")
         return date_created
 
-    
     @classmethod
     def __get_issue_date_closed(cls, issue: Issue) -> str | None:
         """
