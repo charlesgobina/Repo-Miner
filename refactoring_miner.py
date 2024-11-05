@@ -1,11 +1,11 @@
+'''
+TBW'''
 import subprocess
 import os
-import shutil
-from get_github_url import CSVHandler
+from datetime import datetime
 from pydriller import Repository
 from github import Github
 from github import Auth
-from datetime import datetime
 
 auth = Auth.Token('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')
 pwd = os.getcwd()
@@ -19,10 +19,14 @@ print(pwd)
 
 
 class RefactoringMiner:
+    '''
+    Class to mine refactoring data from the cloned repositories'''
     def __init__(self):
         pass
 
     def get_refactorings(self, github_repos):
+        '''
+        TBW'''
         # use subprocess to run RefactoringMiner on the cloned repositories
         if os.getcwd() != refactoring_miner_path:
             os.chdir(refactoring_miner_path)

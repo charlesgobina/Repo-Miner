@@ -1,19 +1,25 @@
+'''
+TBW
+'''
 import subprocess
 import os
 import json
 # import requests
 import csv
-import pandas as pd
 
 # csv file name
 filename = "./data/sonar_measures.csv"
 
 
 class CSVHandler:
+    '''
+    Class to handle CSV files'''
     def __init__(self, filename_i):
         self.filename = filename_i
 
     def read_csv(self):
+        '''
+        Read a CSV file'''
         rows = []
         with open(self.filename, 'r', encoding="utf-8") as csvfile:
             # creating a csv reader object
@@ -25,15 +31,21 @@ class CSVHandler:
         return rows
 
     def write_json(self, data, filename_j):
+        '''
+        Write data to a JSON file'''
         with open(filename_j, 'w', encoding='utf-8') as file:
             json.dump(data, file, indent=4)
-    
+
     def read_json(self, filename_j):
+        '''
+        Read a JSON file'''
         with open(filename_j, 'r', encoding='utf-8') as file:
             data = json.load(file)
         return data
 
     def get_project_name_column(self, rows):
+        '''
+        Get the project name column from the csv file'''
         all_projects = []
         for row in rows:
             # parsing each column of a row
@@ -42,6 +54,8 @@ class CSVHandler:
         return all_projects
 
     def format_project_name(self, project_list):
+        '''
+        Format the project names'''
         formatted_project_list = []
         for project in project_list:
             formatted_project = project[7:]
@@ -49,9 +63,13 @@ class CSVHandler:
         return formatted_project_list
 
     def get_unique_projects(self, project_list):
+        '''
+        Get the unique projects'''
         return list(set(project_list))
 
     def build_github_url(self, unique_projects):
+        '''
+        Build the GitHub URL for the projects'''
         unique_project_urls = []  # list to store unique project urls
         # limit the number of projects to 5
         unique_projects = unique_projects[:5]
@@ -62,6 +80,8 @@ class CSVHandler:
 
     # add logic to ask the user where they want to clone the repos
     def clone_repo(self, unique_project_urls):
+        '''
+        Clone the repositories'''
         cloned_repos_path = "./cloned_repos"
         repo_names = []
         for project_url in unique_project_urls:
@@ -76,6 +96,9 @@ class CSVHandler:
         return repo_names
 
     def local_repo_name(self):
+        '''
+        Get the names of the cloned repositories
+        '''
         cloned_repos_path = "./cloned_repos"
         folders = [
             name for name in os.listdir(cloned_repos_path) if os.path.isdir(
@@ -97,6 +120,8 @@ class CSVHandler:
     #         print('Failed!')
 
     def parse_json_files(self, directory: str):
+        '''
+        Parse JSON files in a directory'''
         print(f"Processing JSON files in {directory}")
         json_data = []
         mined_commit_data = []
