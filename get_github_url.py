@@ -11,6 +11,7 @@ import csv
 filename = "./data/sonar_measures.csv"
 
 
+
 class CSVHandler:
     '''
     Class to handle CSV files'''
@@ -72,7 +73,8 @@ class CSVHandler:
         Build the GitHub URL for the projects'''
         unique_project_urls = []  # list to store unique project urls
         # limit the number of projects to 5
-        unique_projects = unique_projects[:5]
+        print(len(unique_projects))
+        unique_projects = unique_projects[:2]
         for project in unique_projects:
             project_url = f"https://github.com/apache/{project}"
             unique_project_urls.append(project_url)
@@ -89,7 +91,7 @@ class CSVHandler:
                 continue
             # use subprocess to clone the repository
             subprocess.run(["git", "clone", project_url,
-                           f"{cloned_repos_path}/{project_url.split('/')[-1]}"], check=True)
+                           f"{cloned_repos_path}/{project_url.split('/')[-1]}"], check=False)
             # store the name of the repos
             repo_names.append(project_url.split('/')[-1])
             print(repo_names)
@@ -119,13 +121,23 @@ class CSVHandler:
     #     else:
     #         print('Failed!')
 
-    def parse_json_files(self, directory: str):
+    def parse_json_files(self):
         '''
         Parse JSON files in a directory'''
-        print(f"Processing JSON files in {directory}")
+
+        directory = "./output"
+        print(f"We are Processing JSON files in {directory}")
+        # change current working directory to the directory
+        # directory = os.chdir(directory)
+        print(f"Here is the new current working directory {directory}")
+
         json_data = []
         mined_commit_data = []
-
+        # get absolute path of the directory
+        print("#############################")
+        print(directory)
+        print(os.path.abspath(directory))
+        print("#############################")
         # Iterate through all files in the directory
         for proc_filename in os.listdir(directory):
             if proc_filename.endswith(".json"):  # Process only .json files
@@ -135,9 +147,13 @@ class CSVHandler:
 
                 # Open and parse the JSON file
                 with open(file_path, 'r', encoding="utf-8") as file:
-                    data = json.load(file)
+                    file_data = json.load(file)
 
-                    data = data['commits']
+                    print(f"Data in {proc_filename} is {file_data}")
+
+                    data = file_data['commits']
+
+                    print(f"Data in {proc_filename} is {data}")
 
                     # Append the list data from the JSON file to json_data
                     if isinstance(data, list):  # Ensure data is a list

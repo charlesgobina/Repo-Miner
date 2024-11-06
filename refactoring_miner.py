@@ -7,7 +7,7 @@ from pydriller import Repository
 from github import Github
 from github import Auth
 
-auth = Auth.Token('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')
+auth = Auth.Token('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')
 pwd = os.getcwd()
 g = Github(auth=auth)
 
@@ -40,12 +40,17 @@ class RefactoringMiner:
                 print(os.getcwd())
             print(f"Running RefactoringMiner on {github_repo}")
             github_repo_path = f"{pwd}/cloned_repos/{github_repo}"
+            # create the output folder
+            if "output" not in os.listdir(pwd):
+                os.mkdir(f"{pwd}/output")
             # path to the cloned repository
             subprocess.run(["./RefactoringMiner",
                             "-a",
                             github_repo_path,
                             "-json",
                             f"{pwd}/output/{github_repo}.json"], check=False)
+        # change the current working directory back to the original directory
+        os.chdir(pwd)
 
     def get_refactoring_types(self, refactoring_data):
         '''
