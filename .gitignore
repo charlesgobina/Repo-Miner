@@ -3,5 +3,10 @@ output
 __pycache__
 tools
 data
+commits_hash.json
+dev_effort.csv
+commit_details
+.venv
+projects
 *.json
 .idea
