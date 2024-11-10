@@ -3,9 +3,12 @@
 import logging
 from datetime import datetime
 from threading import Thread
+from time import sleep
 
 from github import Auth, Github
+from github.GithubException import RateLimitExceededException
 from github.Issue import Issue
+from pause import until
 
 # TODO: logging config and api keys should be loaded from config file
 # or a config object
@@ -25,7 +28,7 @@ logger.setLevel(logging.DEBUG)
 
 class ITSMiner:
     """
-    Represents the issue data miner for github
+    Represents the issue data miner for github.
 
     ## Attributes:
 
@@ -41,7 +44,8 @@ class ITSMiner:
     @classmethod
     def mine_issue_data(cls, repo: str) -> list:
         """
-        Mines all the issue data for a github repository
+        Mines all the issue data for a github repository. The method should be run in a thread because of 
+        API rate limiting handling so the program start executing from the same point.
 
         ## Parameter:
 
@@ -59,12 +63,17 @@ class ITSMiner:
 
         logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
 
-        # TODO: need to improve this
         # clear previous issues
         cls.__issue_data.clear()
 
         # for each issue get required data
         for issue in issues:
+
+            # pause the program if the ratelimit
+            # is about to expire
+            if github.rate_limiting[0] < 10:
+                logger.info(f"Rate limit about to reach - Pausing the issue miner until {datetime.fromtimestamp(github.rate_limiting_resettime)}")
+                until(github.rate_limiting_resettime)
 
             logger.debug(f"API rate limit used: {github.get_rate_limit().raw_data["core"]["used"]}")
             logger.debug(f"Fetching data for issue: {issue.number}; Project: {gh_repo.full_name}")
@@ -76,23 +85,23 @@ class ITSMiner:
             issue_data_thread = Thread(
                 target=cls.__get_issue_raw_data,
                 args=(issue, issue_data,)
-                )
+            )
             comments_data_thread = Thread(
                 target=cls.__get_issue_comments,
                 args=(issue, issue_data,)
-                )
+            )
             timeline_data_thread = Thread(
                 target=cls.__get_issue_timeline,
                 args=(issue, issue_data,)
-                )
+            )
 
             # start the threads
             issue_data_thread.start()
             comments_data_thread.start()
             timeline_data_thread.start()
 
-            # join the threads to retrieve
-            # all data for an issue
+            # wait for all threads to
+            # process before continuing to the next issue
             issue_data_thread.join()
             comments_data_thread.join()
             timeline_data_thread.join()
