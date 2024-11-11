@@ -5,8 +5,8 @@ import json
 from operator import itemgetter
 from pprint import pprint
 import subprocess
-import git
 from configparser import ConfigParser
+import git
 
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
@@ -55,11 +55,14 @@ class DevEffort:
                 return None
         return commit_details_list
 
-    def get_loc(self, directory, commit):
+    def get_loc(self, project, output_directory, commit):
         """Switches current repository to specified commit"""
-        
+         
         subprocess.run(["git", "checkout", f"{commit}"], check=False)
-        scc_file = f"scc_{commit}.json"
+        scc_directory = f"{output_directory}{self.config['output']['path'][1:]}/{project}/scc"
+        if not os.path.exists(scc_directory):
+            os.mkdir(scc_directory)
+        scc_file = f"{scc_directory}/{commit}.json"
         subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
 
         loc_counter = 0
@@ -71,18 +74,20 @@ class DevEffort:
         # print(loc_counter)
         return loc
 
-    def touched_lines_of_code(self, current_directory, project_dir, commit_details_list):
+    def touched_lines_of_code(self, current_directory, project_dir, project_name, commit_details_list):
         """Gets the touched lines of code for each commit of a project"""
+
+        output_directory = os.getcwd()
 
         tloc_list = []
         os.chdir(project_dir)
         for commit in commit_details_list:
-            commit_hash = commit['commit_hash']          
-            current_loc = self.get_loc(project_dir, commit_hash)
+            commit_hash = commit['commit_hash']        
+            current_loc = self.get_loc(project_name, output_directory, commit_hash)
 
             rev_parse_command = subprocess.check_output(["git", "rev-parse", f"{commit_hash}^1"])
             previous_commit = rev_parse_command.decode('utf-8').strip()
-            previous_loc = self.get_loc(project_dir, previous_commit)
+            previous_loc = self.get_loc(project_name, output_directory, previous_commit)
 
             tloc = abs(current_loc - previous_loc)
             tloc_list.append(tloc)
@@ -124,4 +129,4 @@ class DevEffort:
             # print(len(sorted_commit_details))
 
             current_directory = os.getcwd()
-            self.touched_lines_of_code(current_directory, project_dir, sorted_commit_details)
+            self.touched_lines_of_code(current_directory, project_dir, project_name, sorted_commit_details)
