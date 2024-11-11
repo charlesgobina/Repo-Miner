@@ -6,13 +6,16 @@ from operator import itemgetter
 from pprint import pprint
 import subprocess
 import git
+from configparser import ConfigParser
 
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
 
     commit_details_matrix = []
 
-    def __init__(self, json_path):
+    def __init__(self, json_path, config: ConfigParser):
+
+        self.config = config
         # print(f"Reading JSON file: {json_path}")
         self.json_path = json_path
         # print(self.get_json())
@@ -25,7 +28,7 @@ class DevEffort:
 
     def get_project_dir(self, project):
         """Returns project directory"""
-        project_path = f"/home/taba/root/projects/{project}"
+        project_path = f"{self.config['path']['project_path'] + '/' + project}"
         return project_path
 
     def collect_commit_details(self, project, project_repo):
@@ -54,7 +57,7 @@ class DevEffort:
 
     def get_loc(self, directory, commit):
         """Switches current repository to specified commit"""
-        os.chdir(directory)
+        
         subprocess.run(["git", "checkout", f"{commit}"], check=False)
         scc_file = f"scc_{commit}.json"
         subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
@@ -72,7 +75,7 @@ class DevEffort:
         """Gets the touched lines of code for each commit of a project"""
 
         tloc_list = []
-
+        os.chdir(project_dir)
         for commit in commit_details_list:
             commit_hash = commit['commit_hash']          
             current_loc = self.get_loc(project_dir, commit_hash)
@@ -112,7 +115,7 @@ class DevEffort:
             commit_details_list = self.collect_commit_details(project, project_repo)
             sorted_commit_details = sorted(commit_details_list, key=itemgetter('date'))
 
-            with open(f"commit_details/{project_name}.json", 'w', encoding='utf-8') as cd_file:
+            with open(f"{self.config['output']['path'] + '/' + project_name + '/' + 'commit_details.json'}", 'w', encoding='utf-8') as cd_file:
                 json.dump(sorted_commit_details, cd_file)
 
             pretty_print = 1
