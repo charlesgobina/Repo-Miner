@@ -8,10 +8,33 @@ import subprocess
 from configparser import ConfigParser
 import git
 
+
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
 
-    commit_details_matrix = []
+    tiobe_index = {
+        "Visual FoxPro", "1C", "4th Dimension", "ABAP", "ABC", "ActionScript", "Ada",
+        "Agilent VEE", "Algol", "Alice", "Angelscript", "Apex", "APL", "Applescript",
+        "Arc", "AspectJ", "Assembly language", "ATLAS", "AutoHotkey", "AutoIt", "AutoLISP",
+        "Awk", "Bash", "Basic", "bc", "BCPL", "BETA", "Bourne shell", "Brainfuck", "C shell",
+        "C#", "C++", "C", "Caml", "Carbon", "Ceylon", "CFML", "Chapel", "CHILL", "CIL",
+        "Clojure", "COBOL", "CoffeeScript", "Crystal", "Curl", "D", "Dart", "Delphi/Object Pascal",
+        "DiBOL", "Dylan", "E", "ECMAScript", "Eiffel", "Elixir", "Elm", "Emacs Lisp", "Erlang",
+        "F#", "Factor", "Falcon", "Fantom", "Forth", "Fortran", "FreeBASIC", "GAMS", "GLSL",
+        "Go", "Groovy", "Hack", "Harbour", "Haskell", "Haxe", "Heron", "Icon", "IDL", "Idris",
+        "Io", "J", "JADE", "Java", "JavaScript", "Julia", "Korn shell", "Kotlin", "LabVIEW",
+        "Ladder Logic", "Lasso", "Lingo", "Lisp", "Logo", "LotusScript", "Lua", "MAD", "Magic",
+        "Magik", "MANTIS", "Maple", "MATLAB", "Max/MSP", "MAXScript", "MEL", "Mercury", "ML",
+        "Modula-2", "Modula-3", "Monkey", "MQL5", "MS-DOS batch", "MUMPS", "NATURAL", "Nim",
+        "NQC", "Objective-C", "OCaml", "OpenCL", "OpenEdge ABL", "OPL", "Oz", "Pascal", "Perl",
+        "PHP", "Pike", "PostScript", "PowerBasic", "PowerShell", "Processing", "Prolog",
+        "PureBasic", "Python", "R", "Racket", "REBOL", "Red", "REXX", "Ring", "RPG", "Ruby",
+        "Rust", "SAS", "Scala", "Scheme", "sed", "Seed7", "Simula", "Simulink", "Smalltalk",
+        "Smarty", "Solidity", "SPARK", "SPSS", "SQL", "SQR", "Squirrel", "Standard ML", "Stata",
+        "Swift", "SystemVerilog", "Tcl", "Transact-SQL", "TypeScript", "Uniface", "Vala/Genie",
+        "VBScript", "VHDL", "Visual Basic", "WebAssembly", "Wolfram", "X++", "X10", "XBase",
+        "XBase++", "XC", "Xen", "Xojo", "XQuery", "XSLT", "Xtend", "Z shell", "Zig"
+    }
 
     def __init__(self, json_path, config: ConfigParser):
 
@@ -55,26 +78,54 @@ class DevEffort:
                 return None
         return commit_details_list
 
-    def get_loc(self, project, output_directory, commit):
+    def filter_programming_languages(self, scc_file):
+        """Removes non-programming languages using the TIOBE index"""
+        # filtered_data = []
+
+        with open(scc_file, 'r', encoding='utf-8') as file:
+            scc_data = json.load(file)
+
+            # Filter out non-programming languages
+            for entry in scc_data:
+                language = entry.get("Name")
+                if language not in self.tiobe_index:
+                    scc_data.remove(entry)
+
+        # filtered_scc_file = f"filtered_{scc_file}"
+        # Save the filtered data to a new JSON file
+        with open(scc_file, 'w', encoding='utf-8') as filtered_scc_file:
+            json.dump(scc_data, filtered_scc_file, indent=4)
+
+        print(f"Filtered data saved to {scc_file}")
+
+    def get_loc(self, project, output_directory, commit, is_refactoring):
         """Switches current repository to specified commit"""
-         
         subprocess.run(["git", "checkout", f"{commit}"], check=False)
         scc_directory = f"{output_directory}{self.config['output']['path'][1:]}/{project}/scc"
         if not os.path.exists(scc_directory):
             os.mkdir(scc_directory)
-        scc_file = f"{scc_directory}/{commit}.json"
+
+        if is_refactoring:
+            scc_file = f"{scc_directory}/refactoring_{commit}.json"
+        else:
+            scc_file = f"{scc_directory}/commit_{commit}.json"
         subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
 
+        print(scc_file)
+
+        self.filter_programming_languages(scc_file)
+
         loc_counter = 0
-        with open(scc_file, 'r', encoding='utf-8') as scc_file:
-            scc_data = json.load(scc_file)
+        with open(scc_file, 'r', encoding='utf-8') as file:
+            scc_data = json.load(file)
             for language in scc_data:
                 loc = language['Code']
                 loc_counter += loc
-        # print(loc_counter)
-        return loc
 
-    def touched_lines_of_code(self, current_directory, project_dir, project_name, commit_details_list):
+        print(loc_counter)
+        return loc_counter
+
+    def touched_lines_of_code(self, current_dir, project_dir, project_name, commit_details_list):
         """Gets the touched lines of code for each commit of a project"""
 
         output_directory = os.getcwd()
@@ -82,20 +133,23 @@ class DevEffort:
         tloc_list = []
         os.chdir(project_dir)
         for commit in commit_details_list:
-            commit_hash = commit['commit_hash']        
-            current_loc = self.get_loc(project_name, output_directory, commit_hash)
+            commit_hash = commit['commit_hash']
+            current_loc = self.get_loc(
+                project_name, output_directory, commit_hash, 1)
 
-            rev_parse_command = subprocess.check_output(["git", "rev-parse", f"{commit_hash}^1"])
+            rev_parse_command = subprocess.check_output(
+                ["git", "rev-parse", f"{commit_hash}^1"])
             previous_commit = rev_parse_command.decode('utf-8').strip()
-            previous_loc = self.get_loc(project_name, output_directory, previous_commit)
+            previous_loc = self.get_loc(
+                project_name, output_directory, previous_commit, 0)
 
             tloc = abs(current_loc - previous_loc)
             tloc_list.append(tloc)
 
-        for tloc in tloc_list:
-            print(tloc)
+        # for tloc in tloc_list:
+        #     print(tloc)
 
-        os.chdir(current_directory)
+        os.chdir(current_dir)
 
     def mine_projects(self):
         """Prints commit data"""
@@ -117,16 +171,24 @@ class DevEffort:
             project_dir = self.get_project_dir(project_name)
             project_repo = git.Repo(project_dir)
 
-            commit_details_list = self.collect_commit_details(project, project_repo)
-            sorted_commit_details = sorted(commit_details_list, key=itemgetter('date'))
+            commit_details_list = self.collect_commit_details(
+                project, project_repo)
+            sorted_commit_details = sorted(
+                commit_details_list, key=itemgetter('date'))
 
-            with open(f"{self.config['output']['path'] + '/' + project_name + '/' + 'commit_details.json'}", 'w', encoding='utf-8') as cd_file:
+            output_dir = f"{self.config['output']['path']}/{project_name}"
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            cd_file = f"{output_dir}/commit_details.json"
+            with open(cd_file, 'w', encoding='utf-8') as cd_file:
                 json.dump(sorted_commit_details, cd_file)
 
-            pretty_print = 1
+            pretty_print = 0
             if pretty_print:
                 pprint(sorted_commit_details)
             # print(len(sorted_commit_details))
 
-            current_directory = os.getcwd()
-            self.touched_lines_of_code(current_directory, project_dir, project_name, sorted_commit_details)
+            cwd = os.getcwd()
+            self.touched_lines_of_code(
+                cwd, project_dir, project_name, sorted_commit_details)

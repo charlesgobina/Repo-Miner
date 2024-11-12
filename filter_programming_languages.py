@@ -1,6 +1,10 @@
+"""
+This module filters the files from scc to remove non-programming languages
+"""
+
 import json
 
-# Recognized programming languages 
+# Recognized programming languages
 RECOGNIZED_LANGUAGES = {
     "Visual FoxPro", "1C", "4th Dimension", "ABAP", "ABC", "ActionScript", "Ada", 
     "Agilent VEE", "Algol", "Alice", "Angelscript", "Apex", "APL", "Applescript",
@@ -20,24 +24,24 @@ RECOGNIZED_LANGUAGES = {
     "Python", "R", "Racket", "REBOL", "Red", "REXX", "Ring", "RPG", "Ruby", "Rust", "SAS",
     "Scala", "Scheme", "sed", "Seed7", "Simula", "Simulink", "Smalltalk", "Smarty", "Solidity",
     "SPARK", "SPSS", "SQL", "SQR", "Squirrel", "Standard ML", "Stata", "Swift", "SystemVerilog",
-    "Tcl", "Transact-SQL", "TypeScript", "Uniface", "Vala/Genie", "VBScript", "VHDL", "Visual Basic",
-    "WebAssembly", "Wolfram", "X++", "X10", "XBase", "XBase++", "XC", "Xen", "Xojo", "XQuery", "XSLT",
-    "Xtend", "Z shell", "Zig"
+    "Tcl", "Transact-SQL", "TypeScript", "Uniface", "Vala/Genie", "VBScript", "VHDL",
+    "Visual Basic", "WebAssembly", "Wolfram", "X++", "X10", "XBase", "XBase++", "XC", "Xen", "Xojo",
+    "XQuery", "XSLT", "Xtend", "Z shell", "Zig"
 }
 
 # Load SCC JSON data
 scc_files = [
-    
+
     'c:/Users/houci/OneDrive/Bureau/New folder (2)/Untitled-1.json'
-    
+
 ]
 
 filtered_data = []
 
 for file_path in scc_files:
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
-        
+
         # Filter out non-programming languages
         for entry in data:
             language = entry.get("Name")
@@ -45,8 +49,8 @@ for file_path in scc_files:
                 filtered_data.append(entry)
 
 # Save the filtered data to a new JSON file
-output_file = 'c:/Users/houci/OneDrive/Bureau/New folder (2)/filtered_scc_output.json'
-with open(output_file, 'w') as file:
+OUTPUT_FILE = "c:/Users/houci/OneDrive/Bureau/New folder (2)/filtered_scc_output.json"
+with open(OUTPUT_FILE, 'w', encoding='utf8') as file:
     json.dump(filtered_data, file, indent=4)
 
-print(f"Filtered data saved to {output_file}")
+print(f"Filtered data saved to {OUTPUT_FILE}")
