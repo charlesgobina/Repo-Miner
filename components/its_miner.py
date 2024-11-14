@@ -6,7 +6,7 @@ from threading import Thread
 from time import sleep
 
 from github import Auth, Github
-from github.GithubException import RateLimitExceededException
+from github.GithubException import RateLimitExceededException, UnknownObjectException
 from github.Issue import Issue
 from pause import until
 
@@ -23,7 +23,7 @@ formatter = logging.Formatter(
     datefmt="%Y-%m-%d %H:%M",
 )
 console_handler.setFormatter(formatter)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class ITSMiner:
@@ -42,7 +42,7 @@ class ITSMiner:
     __issue_data: list = []
 
     @classmethod
-    def mine_issue_data(cls, repo: str) -> list:
+    def mine_issue_data(cls, repo: str) -> list | None:
         """
         Mines all the issue data for a github repository. The method should be run in a thread because of 
         API rate limiting handling so the program start executing from the same point.
@@ -53,12 +53,18 @@ class ITSMiner:
 
         ## Returns:
 
-        Returns a list with all issue data
+        Returns a list with all issue data as a list. Returns `None` if no issue data is found
         """
 
-        auth = Auth.Token("API_KEY")
+        auth = Auth.Token("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")
         github = Github(auth=auth)
-        gh_repo = github.get_repo(repo)
+
+        try:
+            gh_repo = github.get_repo(repo)
+        except UnknownObjectException as err:
+            logger.error(f"Repository {repo} not found on Github. Error: {err}")
+            return None
+
         issues = gh_repo.get_issues(state="all")
 
         logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
