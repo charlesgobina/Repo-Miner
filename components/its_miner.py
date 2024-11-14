@@ -1,14 +1,17 @@
 """Mines the issue data for a github repo"""
 
 import logging
+from configparser import ConfigParser
 from datetime import datetime
 from threading import Thread
 from time import sleep
-from configparser import ConfigParser
+
 from github import Auth, Github
-from github.GithubException import RateLimitExceededException, UnknownObjectException
+from github.GithubException import (RateLimitExceededException,
+                                    UnknownObjectException)
 from github.Issue import Issue
 from pause import until
+
 
 class ITSMiner:
     """
