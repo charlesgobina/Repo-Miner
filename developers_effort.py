@@ -8,7 +8,6 @@ import subprocess
 from configparser import ConfigParser
 import git
 
-
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
 
@@ -43,11 +42,12 @@ class DevEffort:
         self.json_path = json_path
         # print(self.get_json())
 
-    def get_json(self):
-        """Goes through the projects inside the JSON"""
-        with open(self.json_path, encoding="utf-8") as file:
-            json_data = json.load(file)
-        return json_data
+    # def get_json(self, project_name):
+    #     """Goes through the projects inside the JSON"""
+    #     project_file = f"{self.json_path}/{project_name}"
+    #     with open(project_file, encoding="utf-8") as file:
+    #         json_data = json.load(file)
+    #     return json_data
 
     def get_project_dir(self, project):
         """Returns project directory"""
@@ -58,7 +58,7 @@ class DevEffort:
         """Collects commit details: hash, author, date, lines changed, files changed"""
         commit_details_list = []
         # print(project_dir)
-        for commit_hash in project["commits"]:
+        for commit_hash in project[0]["commits"]:
             # print(commit_hash)
             # print(project_repo)
             commit = project_repo.commit(commit_hash)
@@ -151,44 +151,72 @@ class DevEffort:
 
         os.chdir(current_dir)
 
-    def mine_projects(self):
+    def effort_by_developer(self, project_name):
+        """Organizes the scc output by developer"""
+        output_dir = f"{self.config['output']['path']}/{project_name}"
+
+        commit_details_file = f"{output_dir}/commit_details.json"
+        dev_dir = f"{output_dir}/dev"
+        if not os.path.exists(dev_dir):
+            os.makedirs(dev_dir)
+
+        with open(commit_details_file, 'r', encoding='utf-8') as file:
+            commit_data = json.load(file)
+
+        # print(f"\033[91m{commit_data}\033[00m")
+
+        # Process the data to get the output
+        dev_list = {}
+        for developer in commit_data:
+            dev = developer['author']
+            print(f"\033[91m{dev}\033[00m")
+            if dev in dev_list:
+                dev_list[dev] += 1
+            else:
+                dev_list[dev] = 1
+            # dev_info = {
+            #     'name': developer['name'],
+            #     'projects': [project['project_name'] for project in developer['projects']]
+            # }
+            # dev_data.append(dev_info)
+
+        print(f"\033[91m{dev_list}\033[00m")
+
+        # Write the output data to a new JSON file
+        dev_file = f"{dev_dir}/dev.json"
+        with open(dev_file, 'w', encoding='utf-8') as file:
+            json.dump(dev_list, file, indent=4)
+
+        print(f"\033[91mOutput has been written to {dev_file}\033[00m")
+
+    def mine_projects(self, project_json):
         """Prints commit data"""
-        json_data = self.get_json()
-        # print(json_data)
+        project_file = f"{self.config['commits_hash']['commits_path']}/{project_json}"
+        with open(project_file, 'r', encoding='utf-8') as json_file:
+            project = json.load(json_file)
 
-        projects = []
+        project_name = project[0]["project"]
+        project_dir = self.get_project_dir(project_name)
+        project_repo = git.Repo(project_dir)
 
-        for project in enumerate(json_data):
-            projects.append({
-                "index": project[0],
-                "project": project[1]["project"],
-                "commits": project[1]["commits"]
-            })
+        commit_details_list = self.collect_commit_details(
+            project, project_repo)
+        sorted_commit_details = sorted(
+            commit_details_list, key=itemgetter('date'))
 
-        for project in projects:
-            # print(project["project"])
-            project_name = project["project"]
-            project_dir = self.get_project_dir(project_name)
-            project_repo = git.Repo(project_dir)
+        output_dir = f"{self.config['output']['path']}/{project_name}"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
-            commit_details_list = self.collect_commit_details(
-                project, project_repo)
-            sorted_commit_details = sorted(
-                commit_details_list, key=itemgetter('date'))
+        cd_file = f"{output_dir}/commit_details.json"
+        with open(cd_file, 'w', encoding='utf-8') as cd_file:
+            json.dump(sorted_commit_details, cd_file)
 
-            output_dir = f"{self.config['output']['path']}/{project_name}"
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
+        pretty_print = 0
+        if pretty_print:
+            pprint(sorted_commit_details)
+        # print(len(sorted_commit_details))
 
-            cd_file = f"{output_dir}/commit_details.json"
-            with open(cd_file, 'w', encoding='utf-8') as cd_file:
-                json.dump(sorted_commit_details, cd_file)
-
-            pretty_print = 0
-            if pretty_print:
-                pprint(sorted_commit_details)
-            # print(len(sorted_commit_details))
-
-            cwd = os.getcwd()
-            self.touched_lines_of_code(
-                cwd, project_dir, project_name, sorted_commit_details)
+        cwd = os.getcwd()
+        self.touched_lines_of_code(cwd, project_dir, project_name, sorted_commit_details)
+        self.effort_by_developer(project_name)
