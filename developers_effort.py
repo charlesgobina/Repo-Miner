@@ -6,7 +6,10 @@ from operator import itemgetter
 from pprint import pprint
 import subprocess
 from configparser import ConfigParser
+import csv
+from csv import writer
 import git
+import pandas as pd
 
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""
@@ -36,18 +39,8 @@ class DevEffort:
     }
 
     def __init__(self, json_path, config: ConfigParser):
-
         self.config = config
-        # print(f"Reading JSON file: {json_path}")
         self.json_path = json_path
-        # print(self.get_json())
-
-    # def get_json(self, project_name):
-    #     """Goes through the projects inside the JSON"""
-    #     project_file = f"{self.json_path}/{project_name}"
-    #     with open(project_file, encoding="utf-8") as file:
-    #         json_data = json.load(file)
-    #     return json_data
 
     def get_project_dir(self, project):
         """Returns project directory"""
@@ -72,8 +65,7 @@ class DevEffort:
                 commit_details_list.append(commit_details)
 
             except ValueError as value_error:
-                print(
-                    f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
+                print(f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
                 print(f"Value Error: {value_error}")
                 return None
         return commit_details_list
@@ -96,7 +88,7 @@ class DevEffort:
         with open(scc_file, 'w', encoding='utf-8') as filtered_scc_file:
             json.dump(scc_data, filtered_scc_file, indent=4)
 
-        print(f"Filtered data saved to {scc_file}")
+        # print(f"Filtered data saved to {scc_file}")
 
     def get_loc(self, project, output_directory, commit, is_refactoring):
         """Switches current repository to specified commit"""
@@ -111,7 +103,7 @@ class DevEffort:
             scc_file = f"{scc_directory}/commit_{commit}.json"
         subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
 
-        print(scc_file)
+        # print(scc_file)
 
         self.filter_programming_languages(scc_file)
 
@@ -122,33 +114,32 @@ class DevEffort:
                 loc = language['Code']
                 loc_counter += loc
 
-        print(loc_counter)
+        # print(loc_counter)
         return loc_counter
 
     def touched_lines_of_code(self, current_dir, project_dir, project_name, commit_details_list):
         """Gets the touched lines of code for each commit of a project"""
 
         output_directory = os.getcwd()
+        dev_effort_csv = f"{self.config['output']['path']}/{project_name}/dev_effort.csv"
 
-        tloc_list = []
-        os.chdir(project_dir)
+        # tloc_list = []
         for commit in commit_details_list:
+            os.chdir(project_dir)
             commit_hash = commit['commit_hash']
-            current_loc = self.get_loc(
-                project_name, output_directory, commit_hash, 1)
+            current_loc = self.get_loc(project_name, output_directory, commit_hash, 1)
 
-            rev_parse_command = subprocess.check_output(
-                ["git", "rev-parse", f"{commit_hash}^1"])
+            rev_parse_command = subprocess.check_output(["git", "rev-parse", f"{commit_hash}^1"])
             previous_commit = rev_parse_command.decode('utf-8').strip()
-            previous_loc = self.get_loc(
-                project_name, output_directory, previous_commit, 0)
+            previous_loc = self.get_loc(project_name, output_directory, previous_commit, 0)
 
             tloc = abs(current_loc - previous_loc)
-            tloc_list.append(tloc)
-
-        # for tloc in tloc_list:
-        #     print(tloc)
-
+            csv_row = [f"{commit_hash}", f"{previous_commit}", f"{tloc}"]
+            os.chdir(current_dir)
+            with open(dev_effort_csv, 'a', encoding='utf-8') as csv_file:
+                writer_object = writer(csv_file)
+                writer_object.writerow(csv_row)
+                csv_file.close()
         os.chdir(current_dir)
 
     def effort_by_developer(self, project_name):
@@ -156,7 +147,7 @@ class DevEffort:
         output_dir = f"{self.config['output']['path']}/{project_name}"
 
         commit_details_file = f"{output_dir}/commit_details.json"
-        dev_dir = f"{output_dir}/dev"
+        dev_dir = f"{output_dir}"
         if not os.path.exists(dev_dir):
             os.makedirs(dev_dir)
 
@@ -165,32 +156,35 @@ class DevEffort:
 
         # print(f"\033[91m{commit_data}\033[00m")
 
+        csv_file = pd.read_csv(f"{self.config['output']['path']}/{project_name}/dev_effort.csv")
+
         # Process the data to get the output
         dev_list = {}
-        for developer in commit_data:
-            dev = developer['author']
-            print(f"\033[91m{dev}\033[00m")
-            if dev in dev_list:
-                dev_list[dev] += 1
-            else:
-                dev_list[dev] = 1
-            # dev_info = {
-            #     'name': developer['name'],
-            #     'projects': [project['project_name'] for project in developer['projects']]
-            # }
-            # dev_data.append(dev_info)
+        for commit in commit_data:
+            dev = commit['author']
+            target_hash = commit['commit_hash']
+            tloc_result = csv_file.loc[csv_file['refactoring_hash'] == target_hash, 'TLOC']
 
-        print(f"\033[91m{dev_list}\033[00m")
+            if not tloc_result.empty:
+                tloc_value = int(tloc_result.iloc[0])
+                if dev in dev_list:
+                    dev_list[dev] += tloc_value
+                else:
+                    dev_list[dev] = tloc_value
+            else:
+                print("No matching row found for refactoring hash: ", target_hash)
+
+        # print(f"\033[91m{dev_list}\033[00m")
 
         # Write the output data to a new JSON file
         dev_file = f"{dev_dir}/dev.json"
         with open(dev_file, 'w', encoding='utf-8') as file:
             json.dump(dev_list, file, indent=4)
 
-        print(f"\033[91mOutput has been written to {dev_file}\033[00m")
+        # print(f"\033[91mOutput has been written to {dev_file}\033[00m")
 
     def mine_projects(self, project_json):
-        """Prints commit data"""
+        """Mines a project"""
         project_file = f"{self.config['commits_hash']['commits_path']}/{project_json}"
         with open(project_file, 'r', encoding='utf-8') as json_file:
             project = json.load(json_file)
@@ -199,14 +193,18 @@ class DevEffort:
         project_dir = self.get_project_dir(project_name)
         project_repo = git.Repo(project_dir)
 
-        commit_details_list = self.collect_commit_details(
-            project, project_repo)
-        sorted_commit_details = sorted(
-            commit_details_list, key=itemgetter('date'))
+        commit_details_list = self.collect_commit_details(project, project_repo)
+        sorted_commit_details = sorted(commit_details_list, key=itemgetter('date'))
 
         output_dir = f"{self.config['output']['path']}/{project_name}"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
+
+        csv_file = f"{output_dir}/dev_effort.csv"
+        with open(csv_file, 'w', encoding='utf-8') as csv_file:
+            csvwriter = csv.writer(csv_file)
+            fields = ['refactoring_hash', 'previous_hash', 'TLOC']
+            csvwriter.writerow(fields)
 
         cd_file = f"{output_dir}/commit_details.json"
         with open(cd_file, 'w', encoding='utf-8') as cd_file:
