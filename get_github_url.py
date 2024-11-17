@@ -123,7 +123,7 @@ class CSVHandler:
                 os.path.join(
                     cloned_repos_path,
                     name))]
-        return folders[41:51]
+        return folders[100:]
 
     # def get_repo_info(self, unique_projects):
     #     # GitHub API endpoint for getting the languages of a repository
@@ -210,6 +210,8 @@ class CSVHandler:
 
                 # Open and parse the JSON file
                 with open(file_path, 'r', encoding="utf-8") as file:
+                  # 
+                    print(f'we are currently in {file_path}')
                     data = json.load(file)
                     data = data['commits']
 

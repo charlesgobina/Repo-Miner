@@ -58,6 +58,11 @@ class RefactoringMiner:
         """Split commits into batches of specified size"""
         batches = []
         for project_commits in commits:
+            # skip the projects with over 5000 commits
+            # if len(project_commits['commit_hashes']) > 5000:
+            #     print(
+            #         f"Skipping {project_commits['project']} with over 5000 commits")
+            #     continue
             project_batches = []
             for i in range(0, len(project_commits['commit_hashes']), batch_size):
                 batch_commits = project_commits['commit_hashes'][i:i + batch_size]
@@ -105,7 +110,7 @@ class RefactoringMiner:
                                     f"{pwd}/output/{github_repo['project']}_{key}.json"], check=False)
                     # cooldown for 10 seconds
                     print("Cooling down for 60 seconds")
-                    time.sleep(60)
+                    time.sleep(25)
         os.chdir(pwd)
 
         # merge the json files of the different batches into one json file

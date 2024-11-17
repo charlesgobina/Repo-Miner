@@ -10,3 +10,4 @@ commit_details
 projects
 *.json
 .idea
+*.zip

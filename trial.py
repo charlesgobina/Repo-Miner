@@ -1,177 +1,220 @@
-import subprocess
-import json
-from pathlib import Path
+"""Developers effort component: collects total TLOC for each refactoring and developer"""
+
 import os
-import logging
-from datetime import datetime
-from typing import List, Tuple
-import time
+import json
+from operator import itemgetter
+from pprint import pprint
+import subprocess
+from configparser import ConfigParser
+import csv
+from csv import writer
+import git
+import pandas as pd
 
+class DevEffort:
+    """Class for developers effort; initialized with a GitHub project path"""
 
-class IncrementalRefactoringMiner:
-    def __init__(self, repo_path: str, output_dir: str, batch_size: int = 1000):
-        """
-        Initialize the incremental mining process
+    tiobe_index = {
+        "Visual FoxPro", "1C", "4th Dimension", "ABAP", "ABC", "ActionScript", "Ada",
+        "Agilent VEE", "Algol", "Alice", "Angelscript", "Apex", "APL", "Applescript",
+        "Arc", "AspectJ", "Assembly language", "ATLAS", "AutoHotkey", "AutoIt", "AutoLISP",
+        "Awk", "Bash", "Basic", "bc", "BCPL", "BETA", "Bourne shell", "Brainfuck", "C shell",
+        "C#", "C++", "C", "Caml", "Carbon", "Ceylon", "CFML", "Chapel", "CHILL", "CIL",
+        "Clojure", "COBOL", "CoffeeScript", "Crystal", "Curl", "D", "Dart", "Delphi/Object Pascal",
+        "DiBOL", "Dylan", "E", "ECMAScript", "Eiffel", "Elixir", "Elm", "Emacs Lisp", "Erlang",
+        "F#", "Factor", "Falcon", "Fantom", "Forth", "Fortran", "FreeBASIC", "GAMS", "GLSL",
+        "Go", "Groovy", "Hack", "Harbour", "Haskell", "Haxe", "Heron", "Icon", "IDL", "Idris",
+        "Io", "J", "JADE", "Java", "JavaScript", "Julia", "Korn shell", "Kotlin", "LabVIEW",
+        "Ladder Logic", "Lasso", "Lingo", "Lisp", "Logo", "LotusScript", "Lua", "MAD", "Magic",
+        "Magik", "MANTIS", "Maple", "MATLAB", "Max/MSP", "MAXScript", "MEL", "Mercury", "ML",
+        "Modula-2", "Modula-3", "Monkey", "MQL5", "MS-DOS batch", "MUMPS", "NATURAL", "Nim",
+        "NQC", "Objective-C", "OCaml", "OpenCL", "OpenEdge ABL", "OPL", "Oz", "Pascal", "Perl",
+        "PHP", "Pike", "PostScript", "PowerBasic", "PowerShell", "Processing", "Prolog",
+        "PureBasic", "Python", "R", "Racket", "REBOL", "Red", "REXX", "Ring", "RPG", "Ruby",
+        "Rust", "SAS", "Scala", "Scheme", "sed", "Seed7", "Simula", "Simulink", "Smalltalk",
+        "Smarty", "Solidity", "SPARK", "SPSS", "SQL", "SQR", "Squirrel", "Standard ML", "Stata",
+        "Swift", "SystemVerilog", "Tcl", "Transact-SQL", "TypeScript", "Uniface", "Vala/Genie",
+        "VBScript", "VHDL", "Visual Basic", "WebAssembly", "Wolfram", "X++", "X10", "XBase",
+        "XBase++", "XC", "Xen", "Xojo", "XQuery", "XSLT", "Xtend", "Z shell", "Zig"
+    }
 
-        Args:
-            repo_path: Path to the git repository
-            output_dir: Directory to store output JSON files
-            batch_size: Number of commits to process in each batch
-        """
-        self.repo_path = Path(repo_path)
-        self.output_dir = Path(output_dir)
-        self.batch_size = batch_size
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, json_path, config: ConfigParser):
+        self.config = config
+        self.json_path = json_path
 
-        # Setup logging
-        self.setup_logging()
+    def get_project_dir(self, project):
+        """Returns project directory"""
+        project_path = f"{self.config['path']['project_path'] + '/' + project}"
+        return project_path
 
-    def setup_logging(self):
-        """Configure logging"""
-        log_file = self.output_dir / 'mining_log.txt'
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
+    def collect_commit_details(self, project, project_repo):
+        """Collects commit details: hash, author, date, lines changed, files changed"""
+        commit_details_list = []
+        # print(project_dir)
+        for commit_hash in project[0]["commits"]:
+            # print(commit_hash)
+            # print(project_repo)
+            commit = project_repo.commit(commit_hash)
+            try:
+                commit = project_repo.commit(commit_hash)
+                commit_details = {
+                    "commit_hash": commit_hash,
+                    "author": commit.author.name,
+                    "date": commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                }
+                commit_details_list.append(commit_details)
 
-    def get_all_commits(self) -> List[str]:
-        """Get list of all commit hashes in chronological order"""
-        try:
-            result = subprocess.run(
-                ['git', 'log', '--reverse', '--format=%H'],
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            return result.stdout.strip().split('\n')
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to get commits: {e}")
-            return []
+            except ValueError as value_error:
+                print(f"Warning: Commit {commit_hash} could not be resolved. Skipping.")
+                print(f"Value Error: {value_error}")
+                return None
+        return commit_details_list
 
-    def split_commits_into_batches(self, commits: List[str]) -> List[Tuple[str, str]]:
-        """Split commits into batches of specified size"""
-        batches = []
-        for i in range(0, len(commits), self.batch_size):
-            batch_commits = commits[i:i + self.batch_size]
-            if batch_commits:
-                batches.append((batch_commits[0], batch_commits[-1]))
-        return batches
+    def filter_programming_languages(self, scc_file):
+        """Removes non-programming languages using the TIOBE index"""
+        # filtered_data = []
 
-    def run_refactoring_miner(self, start_commit: str, end_commit: str, output_file: Path) -> bool:
-        """Run RefactoringMiner for a specific commit range"""
-        try:
-            # Adjust this command based on your RefactoringMiner installation
-            cmd = [
-                'RefactoringMiner',
-                '-bc',
-                str(self.repo_path),
-                start_commit,
-                end_commit,
-                str(output_file)
-            ]
+        with open(scc_file, 'r', encoding='utf-8') as file:
+            scc_data = json.load(file)
 
-            self.logger.info(
-                f"Running RefactoringMiner for commits {start_commit[:7]} to {end_commit[:7]}")
-            process = subprocess.run(cmd, capture_output=True, text=True)
+            # Filter out non-programming languages
+            for entry in scc_data:
+                language = entry.get("Name")
+                if language not in self.tiobe_index:
+                    scc_data.remove(entry)
 
-            if process.returncode != 0:
-                self.logger.error(f"RefactoringMiner failed: {process.stderr}")
-                return False
+        # filtered_scc_file = f"filtered_{scc_file}"
+        # Save the filtered data to a new JSON file
+        with open(scc_file, 'w', encoding='utf-8') as filtered_scc_file:
+            json.dump(scc_data, filtered_scc_file, indent=4)
 
-            return True
-        except Exception as e:
-            self.logger.error(f"Error running RefactoringMiner: {e}")
-            return False
+        # print(f"Filtered data saved to {scc_file}")
 
-    def merge_json_files(self, json_files: List[Path], final_output: Path):
-        """Merge multiple JSON files into one"""
-        try:
-            merged_data = []
-            for file in json_files:
-                with open(file, 'r') as f:
-                    data = json.load(f)
-                    if isinstance(data, list):
-                        merged_data.extend(data)
-                    else:
-                        merged_data.append(data)
+    def get_loc(self, project, output_directory, commit, is_refactoring):
+        """Switches current repository to specified commit"""
+        subprocess.run(["git", "checkout", f"{commit}"], check=False)
+        scc_directory = f"{output_directory}{self.config['output']['path'][1:]}/{project}/scc"
+        if not os.path.exists(scc_directory):
+            os.mkdir(scc_directory)
 
-            with open(final_output, 'w') as f:
-                json.dump(merged_data, f, indent=2)
+        if is_refactoring:
+            scc_file = f"{scc_directory}/refactoring_{commit}.json"
+        else:
+            scc_file = f"{scc_directory}/commit_{commit}.json"
+        subprocess.run(["scc", "-f", "json", "-o", scc_file], check=False)
 
-            self.logger.info(f"Successfully merged files into {final_output}")
+        # print(scc_file)
 
-        except Exception as e:
-            self.logger.error(f"Error merging JSON files: {e}")
+        self.filter_programming_languages(scc_file)
 
-    def process_repository(self):
-        """Process the entire repository in batches"""
-        try:
-            # Get all commits
-            self.logger.info(f"Getting commit list for {self.repo_path}")
-            commits = self.get_all_commits()
-            if not commits:
-                self.logger.error("No commits found")
-                return
+        loc_counter = 0
+        with open(scc_file, 'r', encoding='utf-8') as file:
+            scc_data = json.load(file)
+            for language in scc_data:
+                loc = language['Code']
+                loc_counter += loc
 
-            # Split into batches
-            batches = self.split_commits_into_batches(commits)
-            self.logger.info(f"Split repository into {len(batches)} batches")
+        # print(loc_counter)
+        return loc_counter
 
-            # Process each batch
-            temp_files = []
-            for i, (start, end) in enumerate(batches, 1):
-                output_file = self.output_dir / f"refactorings_batch_{i}.json"
-                temp_files.append(output_file)
+    def touched_lines_of_code(self, current_dir, project_dir, project_name, commit_details_list):
+        """Gets the touched lines of code for each commit of a project"""
 
-                self.logger.info(f"Processing batch {i}/{len(batches)}")
-                success = self.run_refactoring_miner(start, end, output_file)
+        output_directory = os.getcwd()
+        dev_effort_csv = f"{self.config['output']['path']}/{project_name}/dev_effort.csv"
 
-                if not success:
-                    self.logger.warning(
-                        f"Failed to process batch {i}, continuing with next batch")
+        # tloc_list = []
+        for commit in commit_details_list:
+            os.chdir(project_dir)
+            commit_hash = commit['commit_hash']
+            current_loc = self.get_loc(project_name, output_directory, commit_hash, 1)
 
-                # Add a small delay to prevent overwhelming the system
-                time.sleep(2)
+            rev_parse_command = subprocess.check_output(["git", "rev-parse", f"{commit_hash}^1"])
+            previous_commit = rev_parse_command.decode('utf-8').strip()
+            previous_loc = self.get_loc(project_name, output_directory, previous_commit, 0)
 
-            # Merge all valid JSON files
-            final_output = self.output_dir / \
-                f"all_refactorings_{self.repo_path.name}.json"
-            self.merge_json_files(
-                [f for f in temp_files if f.exists()], final_output)
+            tloc = abs(current_loc - previous_loc)
+            csv_row = [f"{commit_hash}", f"{previous_commit}", f"{tloc}"]
+            os.chdir(current_dir)
+            with open(dev_effort_csv, 'a', encoding='utf-8') as csv_file:
+                writer_object = writer(csv_file)
+                writer_object.writerow(csv_row)
+                csv_file.close()
+        os.chdir(current_dir)
 
-            # Cleanup temporary files
-            for temp_file in temp_files:
-                if temp_file.exists():
-                    temp_file.unlink()
+    def effort_by_developer(self, project_name):
+        """Organizes the scc output by developer"""
+        output_dir = f"{self.config['output']['path']}/{project_name}"
 
-        except Exception as e:
-            self.logger.error(f"Error processing repository: {e}")
+        commit_details_file = f"{output_dir}/commit_details.json"
+        dev_dir = f"{output_dir}"
+        if not os.path.exists(dev_dir):
+            os.makedirs(dev_dir)
 
+        with open(commit_details_file, 'r', encoding='utf-8') as file:
+            commit_data = json.load(file)
 
-def main():
-    # Example usage
-    repos = [
-        "/path/to/repo1",
-        "/path/to/repo2",
-        # Add more repositories as needed
-    ]
+        # print(f"\033[91m{commit_data}\033[00m")
 
-    output_base_dir = Path("refactoring_results")
+        csv_file = pd.read_csv(f"{self.config['output']['path']}/{project_name}/dev_effort.csv")
 
-    for repo_path in repos:
-        miner = IncrementalRefactoringMiner(
-            repo_path=repo_path,
-            output_dir=output_base_dir / Path(repo_path).name,
-            batch_size=500  # Adjust based on your needs
-        )
-        miner.process_repository()
+        # Process the data to get the output
+        dev_list = {}
+        for commit in commit_data:
+            dev = commit['author']
+            target_hash = commit['commit_hash']
+            tloc_result = csv_file.loc[csv_file['refactoring_hash'] == target_hash, 'TLOC']
 
+            if not tloc_result.empty:
+                tloc_value = int(tloc_result.iloc[0])
+                if dev in dev_list:
+                    dev_list[dev] += tloc_value
+                else:
+                    dev_list[dev] = tloc_value
+            else:
+                print("No matching row found for refactoring hash: ", target_hash)
 
-if __name__ == "__main__":
-    main()
+        # print(f"\033[91m{dev_list}\033[00m")
+
+        # Write the output data to a new JSON file
+        dev_file = f"{dev_dir}/dev.json"
+        with open(dev_file, 'w', encoding='utf-8') as file:
+            json.dump(dev_list, file, indent=4)
+
+        # print(f"\033[91mOutput has been written to {dev_file}\033[00m")
+
+    def mine_projects(self, project_json):
+        """Mines a project"""
+        project_file = f"{self.config['commits_hash']['commits_path']}/{project_json}"
+        with open(project_file, 'r', encoding='utf-8') as json_file:
+            project = json.load(json_file)
+
+        project_name = project[0]["project"]
+        project_dir = self.get_project_dir(project_name)
+        project_repo = git.Repo(project_dir)
+
+        commit_details_list = self.collect_commit_details(project, project_repo)
+        sorted_commit_details = sorted(commit_details_list, key=itemgetter('date'))
+
+        output_dir = f"{self.config['output']['path']}/{project_name}"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        csv_file = f"{output_dir}/dev_effort.csv"
+        with open(csv_file, 'w', encoding='utf-8') as csv_file:
+            csvwriter = csv.writer(csv_file)
+            fields = ['refactoring_hash', 'previous_hash', 'TLOC']
+            csvwriter.writerow(fields)
+
+        cd_file = f"{output_dir}/commit_details.json"
+        with open(cd_file, 'w', encoding='utf-8') as cd_file:
+            json.dump(sorted_commit_details, cd_file)
+
+        pretty_print = 0
+        if pretty_print:
+            pprint(sorted_commit_details)
+        # print(len(sorted_commit_details))
+
+        cwd = os.getcwd()
+        self.touched_lines_of_code(cwd, project_dir, project_name, sorted_commit_details)
+        self.effort_by_developer(project_name)
