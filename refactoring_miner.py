@@ -35,6 +35,9 @@ class RefactoringMiner:
         for github_repo in github_repos:
             github_repo_path = f"{pwd}/cloned_repos/{github_repo}"
             print(f"Getting commits for {github_repo}")
+            if github_repo == "plc4x":
+                print(f"Skipping {github_repo}")
+                continue
             try:
                 result = subprocess.run(
                     ['git', 'log', '--reverse', '--format=%H'],
@@ -154,6 +157,9 @@ class RefactoringMiner:
             if ref_file in os.listdir(f"{pwd}/refactor_type"):
                 print(f"Refactoring types for {ref_file} already exists")
                 continue
+            # skip the apache isis repository
+            if ref_file == "isis.json":
+                continue
             ref_file_path = os.path.join(refactoring_data_path, ref_file)
             # open the json file
             with open(ref_file_path, "r", encoding="utf-8") as json_file:
@@ -177,6 +183,7 @@ class RefactoringMiner:
                                     ref_type['type'])
                 # make the refactoring types unique
                 for refac in refactoring_types:
+                    print("Counting refactoring types for", refac["project"])
                     refac["count_per_type"] = {ref_type: refac["refactoring_type"].count(
                         ref_type) for ref_type in refac["refactoring_type"]}
                     refac["refactoring_type"] = list(
@@ -203,6 +210,9 @@ class RefactoringMiner:
         for ref_file in os.listdir(refactoring_data_path):
             if ref_file in os.listdir(f"{pwd}/commits_hash"):
                 print(f"Commits hash for {ref_file} already exists")
+                continue
+            # skip the apache isis repository
+            if ref_file == "isis.json":
                 continue
             ref_file_path = os.path.join(refactoring_data_path, ref_file)
             with open(ref_file_path, "r", encoding="utf-8") as json_file:
@@ -240,6 +250,9 @@ class RefactoringMiner:
             if ref_file in os.listdir(f"{pwd}/interefactoring_commit_period"):
                 print(
                     f"Interefactoring commit period for {ref_file} already exists")
+                continue
+            # skip the apache isis repository
+            if ref_file == "isis.json":
                 continue
             ref_file_path = os.path.join(commits_hash_path, ref_file)
             with open(ref_file_path, "r", encoding="utf-8") as json_file:
@@ -294,6 +307,9 @@ class RefactoringMiner:
             if ref_file in os.listdir(f"{pwd}/average_time_between_refactorings"):
                 print(
                     f"Average time between refactorings for {ref_file} already exists")
+                continue
+            # skip the apache isis repository
+            if ref_file == "isis.json":
                 continue
             ref_file_path = os.path.join(
                 interefactoring_commit_period_path, ref_file)

@@ -58,6 +58,10 @@ def process_commit_diff(commit_hash_path):
         # if file already exists, skip
         if json_file in os.listdir(f"{pwd}/commits_diff"):
             continue
+        
+        # skip the apache isis project
+        if json_file == 'isis.json':
+            continue
 
         json_file_path = os.path.join(commit_hash_path, json_file)
         data1 = open_json_file(json_file_path)

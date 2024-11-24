@@ -48,20 +48,20 @@ print('Total projects are: ', len(all_projects))
 # csv_handler.clone_repo(unique_projects_url)
 
 # getting the local repo names
-# local_repo_name = csv_handler.local_repo_name()
+local_repo_name = csv_handler.local_repo_name()
 # print(local_repo_name)
 
 # get project all commit hashes
-# project_commit_hashes = refactoring_miner.get_all_commits(local_repo_name)
-# csv_handler.write_json(project_commit_hashes, 'project_commit_hashes.json')
+project_commit_hashes = refactoring_miner.get_all_commits(local_repo_name)
+csv_handler.write_json(project_commit_hashes, 'project_commit_hashes.json')
 
 # split the project commit hashes
-# split_project_commit_hashes = refactoring_miner.split_commits_into_batches(project_commit_hashes, 100)
+split_project_commit_hashes = refactoring_miner.split_commits_into_batches(project_commit_hashes, 300)
 # print('Split project commit hashes are: ', split_project_commit_hashes)
-# csv_handler.write_json(split_project_commit_hashes, 'split_project_commit_hashes.json')
+csv_handler.write_json(split_project_commit_hashes, 'split_project_commit_hashes.json')
 
 # run refactoring miner
-# refactoring_miner.get_refactorings(split_project_commit_hashes)
+refactoring_miner.get_refactorings(split_project_commit_hashes)
 
 # analyze each json file to get the project data to work with
 csv_handler.merge_json_files_by_project_and_cleanup()

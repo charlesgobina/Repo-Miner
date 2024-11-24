@@ -123,7 +123,7 @@ class CSVHandler:
                 os.path.join(
                     cloned_repos_path,
                     name))]
-        return folders[100:]
+        return folders[300:]
 
     # def get_repo_info(self, unique_projects):
     #     # GitHub API endpoint for getting the languages of a repository
