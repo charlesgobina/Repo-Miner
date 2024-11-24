@@ -2,9 +2,9 @@
 TBW'''
 import os
 import sys
-from get_github_url import CSVHandler
-from refactoring_miner import RefactoringMiner
-from get_commit_diff import process_commit_diff
+from components.get_github_url import CSVHandler
+from components.refactoring_miner import RefactoringMiner
+from components.get_commit_diff import process_commit_diff
 from components.helper import get_config_variable
 from configparser import ConfigParser
 from threading import Thread
