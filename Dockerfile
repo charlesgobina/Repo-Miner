@@ -37,4 +37,4 @@ RUN pip3 install -r requirements.txt
 
 COPY config.ini ./
 COPY index.py ./
-CMD ["python3", "index.py"]
+CMD ["python3", "main.py"]
