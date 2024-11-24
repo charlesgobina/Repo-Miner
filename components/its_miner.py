@@ -3,14 +3,15 @@
 import logging
 from configparser import ConfigParser
 from datetime import datetime
+from logging import Logger
 from threading import Thread
-from time import sleep
 
 from github import Auth, Github
-from github.GithubException import (RateLimitExceededException,
-                                    UnknownObjectException)
+from github.GithubException import UnknownObjectException
 from github.Issue import Issue
 from pause import until
+
+from .helper import get_config_variable
 
 
 class ITSMiner:
@@ -19,7 +20,9 @@ class ITSMiner:
 
     ## Attributes:
 
-    __issue_data (list): Instance variable that stores all the issue data for a repo
+    __issue_data (list): instance variable that stores all the issue data for a repo
+    __config (ConfigParser): config object to hold module configs
+    logger (Logger): module level logger object
 
     ## Methods:
 
@@ -29,8 +32,8 @@ class ITSMiner:
     def __init__(self, config: ConfigParser) -> None:
 
         self.__issue_data: list = []
-        self.__config = config
-        self.logger = None
+        self.__config: ConfigParser = config
+        self.logger: Logger = None
 
         self.__setup_logger()
 
@@ -49,7 +52,7 @@ class ITSMiner:
             datefmt="%Y-%m-%d %H:%M",
         )
         console_handler.setFormatter(formatter)
-        self.logger.setLevel(self.__config["logging"]["level"])
+        self.logger.setLevel(get_config_variable("LOGGING_LEVEL", ["logging", "level"], self.__config))
 
     def mine_issue_data(self, repo: str) -> list | None:
         """
@@ -65,7 +68,7 @@ class ITSMiner:
         Returns a list with all issue data as a list. Returns `None` if no issue data is found
         """
 
-        auth = Auth.Token(self.__config["api"]["key"])
+        auth = Auth.Token(get_config_variable("API_KEY", ["api", "key"], self.__config))
         github = Github(auth=auth)
 
         try:
@@ -73,7 +76,6 @@ class ITSMiner:
         except UnknownObjectException as err:
             self.logger.error(f"Repository {repo} not found on Github. Error: {err}")
             return None
-
         issues = gh_repo.get_issues(state="all")
 
         self.logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
@@ -129,7 +131,7 @@ class ITSMiner:
         """
         Get the raw data for issue
 
-        ## Paramters
+        ## Parameters
 
         issue (Issue): issue instance of the repo
 
