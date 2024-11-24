@@ -1,15 +1,14 @@
 '''
 TBW
 '''
-import subprocess
-import os
-import json
 # import requests
 import csv
+import json
+import os
 import re
+import subprocess
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-
 
 # csv file name
 filename = "./data/sonar_measures.csv"

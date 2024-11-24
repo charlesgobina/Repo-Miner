@@ -1,15 +1,17 @@
 """Developers effort component: collects total TLOC for each refactoring and developer"""
 
-import os
+import csv
 import json
-from operator import itemgetter
-from pprint import pprint
+import os
 import subprocess
 from configparser import ConfigParser
-import csv
 from csv import writer
+from operator import itemgetter
+from pprint import pprint
+
 import git
 import pandas as pd
+
 
 class DevEffort:
     """Class for developers effort; initialized with a GitHub project path"""

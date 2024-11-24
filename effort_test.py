@@ -3,7 +3,7 @@
 import os
 from configparser import ConfigParser
 # from git import Repo
-from developers_effort import DevEffort
+from components.developers_effort import DevEffort
 
 config = ConfigParser()
 config.read('config.ini')

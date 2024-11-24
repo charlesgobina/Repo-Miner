@@ -1,16 +1,17 @@
 '''
 TBW'''
-import subprocess
-import os
-from datetime import datetime
-from pydriller import Repository
-from typing import List, Tuple
 import json
-from github import Github
-from github import Auth
-from utility import NoInternetConnectionError, check_internet_connection
+import os
+import subprocess
 import time
-from components.helper import get_config_variable
+from datetime import datetime
+from typing import List, Tuple
+
+from github import Auth, Github
+from pydriller import Repository
+
+from .helper import get_config_variable
+from .utility import NoInternetConnectionError, check_internet_connection
 
 auth = Auth.Token(get_config_variable("API_KEY", [], {}))
 pwd = os.getcwd()
