@@ -10,13 +10,14 @@ from github import Github
 from github import Auth
 from utility import NoInternetConnectionError, check_internet_connection
 import time
+from components.helper import get_config_variable
 
-auth = Auth.Token('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')
+auth = Auth.Token(get_config_variable("API_KEY", [], {}))
 pwd = os.getcwd()
 g = Github(auth=auth)
 
 
-refactoring_miner_path = f"{pwd}/tools/RefactoringMiner/cmd-tool/RefactoringMiner-3.0.7/bin"
+refactoring_miner_path = f"/RMiner/bin"
 
 print(f"Current working directory: {refactoring_miner_path}")
 print(pwd)
@@ -115,36 +116,6 @@ class RefactoringMiner:
                     print("Cooling down for 60 seconds")
                     time.sleep(25)
         os.chdir(pwd)
-
-        # merge the json files of the different batches into one json file
-
-        # for github_repo in github_repos:
-        #     # skip the apache repository with name groovy
-        #     if github_repo == "groovy":
-        #         continue
-        #     # check if github_repo actually exists
-        #     if github_repo not in os.listdir(f"{pwd}/cloned_repos"):
-        #         print(f"Repository {github_repo} does not exist")
-        #         continue
-        #     else:
-        #         print(f"Repository {github_repo} exists")
-        #         print(os.getcwd())
-        #     print(f"Running RefactoringMiner on {github_repo}")
-        #     github_repo_path = f"{pwd}/cloned_repos/{github_repo}"
-        #     # create the output folder
-        #     if "output" not in os.listdir(pwd):
-        #         os.mkdir(f"{pwd}/output")
-        #     if f"{github_repo}.json" in os.listdir(f"{pwd}/output"):
-        #         print(f"Refactoring data for {github_repo} already exists")
-        #         continue
-        #     # path to the cloned repository
-        #     subprocess.run(["./RefactoringMiner",
-        #                     "-a",
-        #                     github_repo_path,
-        #                     "-json",
-        #                     f"{pwd}/output/{github_repo}.json"], check=False)
-        # # change the current working directory back to the original directory
-        # os.chdir(pwd)
 
     def get_refactoring_types(self, refactoring_data_path):
         '''
