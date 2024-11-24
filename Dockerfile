@@ -6,7 +6,8 @@ RUN apk add gcc \
         openjdk11 \
         wget \
         unzip \
-        git
+        git \
+        alpine-sdk
 RUN apk add --update --no-cache --virtual .tmp-build-deps \
         libc-dev \
         linux-headers \
@@ -23,18 +24,12 @@ RUN mkdir components
 ADD components ./components
 
 COPY requirements.txt ./
-COPY get_github_url.py ./
-COPY get_commit_diff.py ./
-COPY effort_test.py ./
-COPY developers_effort.py ./
-COPY refactoring_miner.py ./
-COPY utility.py ./
+COPY config.ini ./
+COPY main.py ./
 
 RUN mkdir ./output
 RUN mkdir ./cloned_repos
-RUN apk add alpine-sdk
+
 RUN pip3 install -r requirements.txt
 
-COPY config.ini ./
-COPY index.py ./
 CMD ["python3", "main.py"]
