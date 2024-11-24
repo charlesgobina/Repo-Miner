@@ -2,9 +2,12 @@
 This module contains functions to process commit diffs
 '''
 import json
-from pydriller import Git
-from utility import open_json_file
 import os
+
+from pydriller import Git
+
+from .utility import open_json_file
+
 pwd = os.getcwd()
 
 # import jsonpickle

@@ -1,0 +1,23 @@
+version: '3'
+services:
+  miner:
+    build:
+      context: .
+    container_name: miner
+    environment:
+      - API_KEY=your_key_here
+      - LOGGING_LEVEL=INFO
+      - INPUT_FILE=/input/sonar_measures.csv
+    volumes:
+      - ./input:/input
+      - /output/average_time_between_refactoring:/miner/average_time_between_refactoring
+      - /output/commits_diff:/miner/commits_diff
+      - /output/commits_hash:/miner/commits_hash
+      - /output/developer_effort:/miner/developer_effort
+      - /output/interrefactoring_commit_period:/miner/interrefactoring_commit_period
+      - /output/refactor_type:/miner/refactor_type
+      - /output/refactoring_commits:/miner/refactoring_commits
+      - /output/all_refactoring_commits:/miner/output
+      - /output/issues:/miner/issues
+      
+

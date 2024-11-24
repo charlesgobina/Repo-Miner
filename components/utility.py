@@ -2,6 +2,7 @@
 This file contains utility functions that are used in the main script
 '''
 import json
+
 import requests
 
 

@@ -1,29 +1,17 @@
 """Mines the issue data for a github repo"""
 
 import logging
+from configparser import ConfigParser
 from datetime import datetime
+from logging import Logger
 from threading import Thread
-from time import sleep
 
 from github import Auth, Github
-from github.GithubException import RateLimitExceededException
+from github.GithubException import UnknownObjectException
 from github.Issue import Issue
 from pause import until
 
-# TODO: logging config and api keys should be loaded from config file
-# or a config object
-
-# Setting up module level logger
-logger = logging.getLogger(__name__)
-console_handler = logging.StreamHandler()
-logger.addHandler(console_handler)
-formatter = logging.Formatter(
-    fmt="{asctime} - {name} - {levelname} - {message}",
-    style="{",
-    datefmt="%Y-%m-%d %H:%M",
-)
-console_handler.setFormatter(formatter)
-logger.setLevel(logging.DEBUG)
+from .helper import get_config_variable
 
 
 class ITSMiner:
@@ -32,17 +20,41 @@ class ITSMiner:
 
     ## Attributes:
 
-    __issue_data (dict): Class variable that stores all the issue data for a repo
+    __issue_data (list): instance variable that stores all the issue data for a repo
+    __config (ConfigParser): config object to hold module configs
+    logger (Logger): module level logger object
 
     ## Methods:
 
     mine_issue_data(): Class method to get all the issue data for a repo
     """
 
-    __issue_data: list = []
+    def __init__(self, config: ConfigParser) -> None:
 
-    @classmethod
-    def mine_issue_data(cls, repo: str) -> list:
+        self.__issue_data: list = []
+        self.__config: ConfigParser = config
+        self.logger: Logger = None
+
+        self.__setup_logger()
+
+    def __setup_logger(self):
+        """
+        Setup and configure the logger for this module
+        """
+
+        # Setting up module level logger
+        self.logger = logging.getLogger(__name__)
+        console_handler = logging.StreamHandler()
+        self.logger.addHandler(console_handler)
+        formatter = logging.Formatter(
+            fmt="{asctime} - {name} - {levelname} - {message}",
+            style="{",
+            datefmt="%Y-%m-%d %H:%M",
+        )
+        console_handler.setFormatter(formatter)
+        self.logger.setLevel(get_config_variable("LOGGING_LEVEL", ["logging", "level"], self.__config))
+
+    def mine_issue_data(self, repo: str) -> list | None:
         """
         Mines all the issue data for a github repository. The method should be run in a thread because of 
         API rate limiting handling so the program start executing from the same point.
@@ -53,18 +65,23 @@ class ITSMiner:
 
         ## Returns:
 
-        Returns a list with all issue data
+        Returns a list with all issue data as a list. Returns `None` if no issue data is found
         """
 
-        auth = Auth.Token("API_KEY")
+        auth = Auth.Token(get_config_variable("API_KEY", ["api", "key"], self.__config))
         github = Github(auth=auth)
-        gh_repo = github.get_repo(repo)
+
+        try:
+            gh_repo = github.get_repo(repo)
+        except UnknownObjectException as err:
+            self.logger.error(f"Repository {repo} not found on Github. Error: {err}")
+            return None
         issues = gh_repo.get_issues(state="all")
 
-        logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
+        self.logger.info(f"Fetching issues for project {gh_repo.full_name} - total count = {issues.totalCount}")
 
         # clear previous issues
-        cls.__issue_data.clear()
+        self.__issue_data.clear()
 
         # for each issue get required data
         for issue in issues:
@@ -72,26 +89,26 @@ class ITSMiner:
             # pause the program if the ratelimit
             # is about to expire
             if github.rate_limiting[0] < 10:
-                logger.info(f"Rate limit about to reach - Pausing the issue miner until {datetime.fromtimestamp(github.rate_limiting_resettime)}")
+                self.logger.info(f"Rate limit about to reach - Pausing the issue miner until {datetime.fromtimestamp(github.rate_limiting_resettime)}")
                 until(github.rate_limiting_resettime)
 
-            logger.debug(f"API rate limit used: {github.get_rate_limit().raw_data["core"]["used"]}")
-            logger.debug(f"Fetching data for issue: {issue.number}; Project: {gh_repo.full_name}")
+            self.logger.debug(f"API rate limit used: {github.get_rate_limit().raw_data["core"]["used"]}")
+            self.logger.debug(f"Fetching data for issue: {issue.number}; Project: {gh_repo.full_name}")
 
             issue_data = {}
 
             # create threads for seperate newtork request
             # to reduce computation time
             issue_data_thread = Thread(
-                target=cls.__get_issue_raw_data,
+                target=self.__get_issue_raw_data,
                 args=(issue, issue_data,)
             )
             comments_data_thread = Thread(
-                target=cls.__get_issue_comments,
+                target=self.__get_issue_comments,
                 args=(issue, issue_data,)
             )
             timeline_data_thread = Thread(
-                target=cls.__get_issue_timeline,
+                target=self.__get_issue_timeline,
                 args=(issue, issue_data,)
             )
 
@@ -106,16 +123,15 @@ class ITSMiner:
             comments_data_thread.join()
             timeline_data_thread.join()
 
-            cls.__issue_data.append(issue_data)
+            self.__issue_data.append(issue_data)
 
-        return cls.__issue_data
+        return self.__issue_data
 
-    @classmethod
-    def __get_issue_raw_data(cls, issue: Issue, issue_data: dict):
+    def __get_issue_raw_data(self, issue: Issue, issue_data: dict):
         """
         Get the raw data for issue
 
-        ## Paramters
+        ## Parameters
 
         issue (Issue): issue instance of the repo
 
@@ -124,8 +140,7 @@ class ITSMiner:
 
         issue_data.update(issue.raw_data)
 
-    @classmethod
-    def __get_issue_comments(cls, issue: Issue, issue_data: dict):
+    def __get_issue_comments(self, issue: Issue, issue_data: dict):
         """
         Extract the comments of the issue
 
@@ -142,8 +157,7 @@ class ITSMiner:
             comments.append(comment.raw_data)
         issue_data["comments"] = comments
 
-    @classmethod
-    def __get_issue_timeline(cls, issue: Issue, issue_data: dict):
+    def __get_issue_timeline(self, issue: Issue, issue_data: dict):
         """
         Get the events related to the issue
 

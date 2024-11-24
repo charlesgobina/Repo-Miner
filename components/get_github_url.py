@@ -1,15 +1,14 @@
 '''
 TBW
 '''
-import subprocess
-import os
-import json
 # import requests
 import csv
+import json
+import os
 import re
+import subprocess
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-
 
 # csv file name
 filename = "./data/sonar_measures.csv"
@@ -123,7 +122,7 @@ class CSVHandler:
                 os.path.join(
                     cloned_repos_path,
                     name))]
-        return folders[300:]
+        return folders
 
     # def get_repo_info(self, unique_projects):
     #     # GitHub API endpoint for getting the languages of a repository
