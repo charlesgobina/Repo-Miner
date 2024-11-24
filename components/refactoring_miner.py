@@ -18,7 +18,7 @@ pwd = os.getcwd()
 g = Github(auth=auth)
 
 
-refactoring_miner_path = f"/RMiner/bin"
+refactoring_miner_path = f"/RefactoringMiner-3.0.9/bin"
 
 print(f"Current working directory: {refactoring_miner_path}")
 print(pwd)
