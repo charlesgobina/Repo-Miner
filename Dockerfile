@@ -3,7 +3,7 @@ FROM python:alpine3.20
 # install dependencies
 RUN apk update
 RUN apk add gcc \
-        openjdk11 \
+        openjdk17 \
         wget \
         unzip \
         git \
@@ -16,7 +16,7 @@ RUN apk add --update --no-cache --virtual .tmp-build-deps \
 # downlaod RMiner
 RUN wget "https://github.com/tsantalis/RefactoringMiner/releases/download/3.0.9/RefactoringMiner-3.0.9.zip"
 
-RUN unzip RefactoringMiner-3.0.9.zip -d /RMiner
+RUN unzip RefactoringMiner-3.0.9.zip -d /
 
 WORKDIR /miner
 RUN mkdir components
@@ -27,6 +27,7 @@ COPY requirements.txt ./
 COPY config.ini ./
 COPY main.py ./
 
+RUN mkdir ./issues
 RUN mkdir ./output
 RUN mkdir ./cloned_repos
 
