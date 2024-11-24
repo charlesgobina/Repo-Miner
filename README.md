@@ -31,27 +31,33 @@ This project is designed to analyze GitHub repositories by mining refactoring da
 3. Install the required dependencies:
 
     ```sh
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
     ```
 
 ## Usage
 
-1. Prepare the CSV file with the project data and place it in the `data` directory. The default file name is `sonar_measures.csv`.
+The recommended way to start the application is using docker. First the environment variables need to be set
 
-2. Run the main script to start the analysis:
+|  Varible   | Description    |
+| :---: | :---: |
+| API_KEY  | Github token to use for the Github API     |
+|LOGGING_LEVEL| The logging level to set|
+|INPUT_FILE|Input csv file with the project names to mine. This needs to be mounted as a volume in the `input` directory|
 
-    ```sh
-    python index.py
-    ```
+The miner outputs are stored in different directories. They can be accessed by mounting them as volumes. 
 
-3. The results will be stored in the `output` directory.
+To start the application run:
+    
+```bash
+sudo docker compose up
+```
 
 ## Project Structure
 
 - `developers_effort.py`: Contains the `DevEffort` class for analyzing developer effort.
 - `get_commit_diff.py`: Contains the `ProjectInfo` class for storing project information.
 - `get_github_url.py`: Contains the `CSVHandler` class for handling CSV files and cloning repositories.
-- `index.py`: Main script to run the analysis.
+- `main.py`: Main script to run the analysis.
 - `refactoring_miner.py`: Contains the `RefactoringMiner` class for mining refactoring data.
 - `utility.py`: Utility functions used across the project.
 
