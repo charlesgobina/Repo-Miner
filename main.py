@@ -50,14 +50,27 @@ def mine_issue_data(config: ConfigParser, repos: list):
             with open(f"./issues/{repo.replace("/","_")}.json", "w") as f:
                 json.dump(data,f)
 
+def banner():
+    print(r'''
+    
+        $$$$$$$\  $$$$$$$$\ $$$$$$$\   $$$$$$\          $$\      $$\ $$$$$$\ $$\   $$\ $$$$$$$$\ $$$$$$$\  
+        $$  __$$\ $$  _____|$$  __$$\ $$  __$$\         $$$\    $$$ |\_$$  _|$$$\  $$ |$$  _____|$$  __$$\ 
+        $$ |  $$ |$$ |      $$ |  $$ |$$ /  $$ |        $$$$\  $$$$ |  $$ |  $$$$\ $$ |$$ |      $$ |  $$ |
+        $$$$$$$  |$$$$$\    $$$$$$$  |$$ |  $$ |$$$$$$\ $$\$$\$$ $$ |  $$ |  $$ $$\$$ |$$$$$\    $$$$$$$  |
+        $$  __$$< $$  __|   $$  ____/ $$ |  $$ |\______|$$ \$$$  $$ |  $$ |  $$ \$$$$ |$$  __|   $$  __$$< 
+        $$ |  $$ |$$ |      $$ |      $$ |  $$ |        $$ |\$  /$$ |  $$ |  $$ |\$$$ |$$ |      $$ |  $$ |
+        $$ |  $$ |$$$$$$$$\ $$ |       $$$$$$  |        $$ | \_/ $$ |$$$$$$\ $$ | \$$ |$$$$$$$$\ $$ |  $$ |
+        \__|  \__|\________|\__|       \______/         \__|     \__|\______|\__|  \__|\________|\__|  \__|
+                                                                                                        
+    ''')
+
 if __name__ == "__main__":
+    banner()
     config = ConfigParser()
     config.read("config.ini")
     logger = setup_logger()
 
-    print('----------------------------------')
-    print(os.getcwd())
-    print('----------------------------------')
+
     # instance of CSVHandler
     csv_handler = CSVHandler(get_config_variable("INPUT_FILE", ["input","path"], config))
 
@@ -69,7 +82,6 @@ if __name__ == "__main__":
 
     # get project name column
     all_projects = csv_handler.get_project_name_column(rows)
-    logger.info(f"Mining data for projects: {all_projects}")
     logger.info(f"Total projects are: {len(all_projects)}")
 
     # format project names
@@ -77,8 +89,6 @@ if __name__ == "__main__":
 
     # get unique projects
     unique_projects = csv_handler.get_unique_projects(formatted_projects)
-    print('Unique projects are: ', unique_projects)
-    print('Total unique projects are: ', len(unique_projects))
 
     # write unique projects to a csv file
     csv_handler.write_json(unique_projects, 'unique_projects.json')
@@ -99,7 +109,6 @@ if __name__ == "__main__":
 
     # getting the local repo names
     local_repo_name = csv_handler.local_repo_name()
-    print(local_repo_name)
 
     # get project all commit hashes
     project_commit_hashes = refactoring_miner.get_all_commits(local_repo_name)
@@ -107,7 +116,6 @@ if __name__ == "__main__":
 
     # split the project commit hashes
     split_project_commit_hashes = refactoring_miner.split_commits_into_batches(project_commit_hashes, 300)
-    print('Split project commit hashes are: ', split_project_commit_hashes)
     csv_handler.write_json(split_project_commit_hashes, 'split_project_commit_hashes.json')
 
     # run refactoring miner
