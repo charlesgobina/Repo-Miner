@@ -1,4 +1,4 @@
-# GitHub Repository Analysis
+# REPO-MINER
 
 This project is designed to analyze GitHub repositories by mining refactoring data, commit details, and other relevant metrics. The analysis includes cloning repositories, extracting commit information, and calculating various statistics.
 
