@@ -17,8 +17,8 @@ This project is designed to analyze GitHub repositories by mining refactoring da
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/yourusername/your-repo-name.git
-    cd your-repo-name
+    git clone git@github.com:charlesgobina/Repo-Miner.git
+    cd Repo-Miner
     ```
 
 2. Create a virtual environment and activate it:
